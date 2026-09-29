@@ -34,74 +34,86 @@
 
     <div class="admin-login-card">
 
-      <div class="admin-login-logo">
+      <!-- LOGO + LOGIN OVERLAY -->
+
+      <div class="admin-login-logo-area">
+
         <img
+          class="admin-login-main-logo"
           src="/assets/logo.png"
           alt="Prep Master"
         >
-      </div>
 
-      <div class="admin-login-heading">
-        <span class="admin-eyebrow">
-          PREP MASTER
-        </span>
+        <!-- Transparent Login Box -->
+        <div class="admin-login-overlay">
 
-        <h1>
-          Admin Panel
-        </h1>
+          <div class="admin-login-heading">
 
-        <p>
-          Login to manage your website.
-        </p>
-      </div>
+            <span class="admin-eyebrow">
+              PREP MASTER
+            </span>
 
-      <form
-        id="adminLoginForm"
-        class="admin-form"
-      >
+            <h1>
+              Admin Panel
+            </h1>
 
-        <div class="form-group">
+          </div>
 
-          <label for="adminUsername">
-            Username
-          </label>
 
-          <input
-            type="text"
-            id="adminUsername"
-            name="username"
-            placeholder="Enter admin username"
-            autocomplete="username"
-            required
+          <form
+            id="adminLoginForm"
+            class="admin-form"
           >
+
+            <div class="form-group">
+
+              <label for="adminUsername">
+                Username
+              </label>
+
+              <input
+                type="text"
+                id="adminUsername"
+                name="username"
+                placeholder="Enter admin username"
+                autocomplete="username"
+                required
+              >
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label for="adminPassword">
+                Password
+              </label>
+
+              <input
+                type="password"
+                id="adminPassword"
+                name="password"
+                placeholder="Enter admin password"
+                autocomplete="current-password"
+                required
+              >
+
+            </div>
+
+
+            <button
+              type="submit"
+              class="primary-btn login-btn"
+            >
+              Login to Admin Panel
+            </button>
+
+          </form>
 
         </div>
 
-        <div class="form-group">
+      </div>
 
-          <label for="adminPassword">
-            Password
-          </label>
-
-          <input
-            type="password"
-            id="adminPassword"
-            name="password"
-            placeholder="Enter admin password"
-            autocomplete="current-password"
-            required
-          >
-
-        </div>
-
-        <button
-          type="submit"
-          class="primary-btn login-btn"
-        >
-          Login to Admin Panel
-        </button>
-
-      </form>
 
       <div class="login-footer">
         <span>
@@ -124,16 +136,13 @@
     style="display:none;"
   >
 
-    <!-- Mobile Overlay -->
     <div
       id="adminOverlay"
       class="admin-overlay"
     ></div>
 
 
-    <!-- ===================================================
-         SIDEBAR
-         =================================================== -->
+    <!-- SIDEBAR -->
 
     <aside
       id="adminSidebar"
@@ -171,13 +180,8 @@
           class="admin-nav-item active"
           data-section="dashboard"
         >
-          <span class="nav-icon">
-            ◈
-          </span>
-
-          <span>
-            Dashboard
-          </span>
+          <span class="nav-icon">◈</span>
+          <span>Dashboard</span>
         </button>
 
 
@@ -186,13 +190,8 @@
           class="admin-nav-item"
           data-section="apps"
         >
-          <span class="nav-icon">
-            ▦
-          </span>
-
-          <span>
-            Apps
-          </span>
+          <span class="nav-icon">▦</span>
+          <span>Apps</span>
         </button>
 
 
@@ -201,13 +200,8 @@
           class="admin-nav-item"
           data-section="keys"
         >
-          <span class="nav-icon">
-            🔑
-          </span>
-
-          <span>
-            App Keys
-          </span>
+          <span class="nav-icon">🔑</span>
+          <span>App Keys</span>
         </button>
 
 
@@ -216,13 +210,8 @@
           class="admin-nav-item"
           data-section="notifications"
         >
-          <span class="nav-icon">
-            🔔
-          </span>
-
-          <span>
-            Notifications
-          </span>
+          <span class="nav-icon">🔔</span>
+          <span>Notifications</span>
         </button>
 
       </nav>
@@ -236,9 +225,7 @@
           class="sidebar-action"
         >
           🌙
-          <span>
-            Theme
-          </span>
+          <span>Theme</span>
         </button>
 
 
@@ -248,9 +235,7 @@
           class="sidebar-action logout-action"
         >
           ↪
-          <span>
-            Logout
-          </span>
+          <span>Logout</span>
         </button>
 
       </div>
@@ -258,16 +243,9 @@
     </aside>
 
 
-    <!-- ===================================================
-         MAIN AREA
-         =================================================== -->
+    <!-- MAIN -->
 
     <main class="admin-main">
-
-
-      <!-- ================================================
-           TOPBAR
-           ================================================ -->
 
       <header class="admin-topbar">
 
@@ -310,7 +288,7 @@
 
           <button
             type="button"
-            id="adminLogout"
+            id="adminLogoutTop"
             class="topbar-logout"
           >
             Logout
@@ -321,9 +299,7 @@
       </header>
 
 
-      <!-- ================================================
-           DASHBOARD SECTION
-           ================================================ -->
+      <!-- DASHBOARD -->
 
       <section
         data-admin-section="dashboard"
@@ -349,97 +325,49 @@
         </div>
 
 
-        <!-- Stats -->
-
         <div class="stats-grid">
 
           <div class="stat-card">
-
-            <div class="stat-icon">
-              📱
-            </div>
+            <div class="stat-icon">📱</div>
 
             <div class="stat-info">
-
-              <span>
-                Total Apps
-              </span>
-
-              <strong id="totalApps">
-                0
-              </strong>
-
+              <span>Total Apps</span>
+              <strong id="totalApps">0</strong>
             </div>
-
           </div>
 
 
           <div class="stat-card">
-
-            <div class="stat-icon">
-              ✓
-            </div>
+            <div class="stat-icon">✓</div>
 
             <div class="stat-info">
-
-              <span>
-                Active Apps
-              </span>
-
-              <strong id="activeApps">
-                0
-              </strong>
-
+              <span>Active Apps</span>
+              <strong id="activeApps">0</strong>
             </div>
-
           </div>
 
 
           <div class="stat-card">
-
-            <div class="stat-icon">
-              🔑
-            </div>
+            <div class="stat-icon">🔑</div>
 
             <div class="stat-info">
-
-              <span>
-                Total Keys
-              </span>
-
-              <strong id="totalKeys">
-                0
-              </strong>
-
+              <span>Total Keys</span>
+              <strong id="totalKeys">0</strong>
             </div>
-
           </div>
 
 
           <div class="stat-card">
-
-            <div class="stat-icon">
-              🔔
-            </div>
+            <div class="stat-icon">🔔</div>
 
             <div class="stat-info">
-
-              <span>
-                Notifications
-              </span>
-
-              <strong id="totalNotifications">
-                0
-              </strong>
-
+              <span>Notifications</span>
+              <strong id="totalNotifications">0</strong>
             </div>
-
           </div>
 
         </div>
 
-
-        <!-- Quick Actions -->
 
         <div class="content-card">
 
@@ -466,13 +394,8 @@
               class="quick-action"
               data-section="apps"
             >
-              <span class="quick-action-icon">
-                ＋
-              </span>
-
-              <span>
-                Add New App
-              </span>
+              <span class="quick-action-icon">＋</span>
+              <span>Add New App</span>
             </button>
 
 
@@ -481,13 +404,8 @@
               class="quick-action"
               data-section="keys"
             >
-              <span class="quick-action-icon">
-                🔑
-              </span>
-
-              <span>
-                Generate Keys
-              </span>
+              <span class="quick-action-icon">🔑</span>
+              <span>Generate Keys</span>
             </button>
 
 
@@ -496,13 +414,8 @@
               class="quick-action"
               data-section="notifications"
             >
-              <span class="quick-action-icon">
-                🔔
-              </span>
-
-              <span>
-                Send Notification
-              </span>
+              <span class="quick-action-icon">🔔</span>
+              <span>Send Notification</span>
             </button>
 
           </div>
@@ -512,9 +425,7 @@
       </section>
 
 
-      <!-- ================================================
-           APPS SECTION
-           ================================================ -->
+      <!-- APPS -->
 
       <section
         data-admin-section="apps"
@@ -556,9 +467,7 @@
 
           <div class="search-box">
 
-            <span>
-              🔍
-            </span>
+            <span>🔍</span>
 
             <input
               type="search"
@@ -575,19 +484,15 @@
           id="appsList"
           class="admin-apps-grid"
         >
-
           <div class="loading-state">
             Loading apps...
           </div>
-
         </div>
 
       </section>
 
 
-      <!-- ================================================
-           KEYS SECTION
-           ================================================ -->
+      <!-- KEYS -->
 
       <section
         data-admin-section="keys"
@@ -615,8 +520,6 @@
 
         </div>
 
-
-        <!-- Generate Key Card -->
 
         <div class="content-card">
 
@@ -694,8 +597,6 @@
         </div>
 
 
-        <!-- Generated Keys -->
-
         <div class="content-card">
 
           <div class="content-card-heading">
@@ -715,9 +616,7 @@
 
             <div class="search-box compact">
 
-              <span>
-                🔍
-              </span>
+              <span>🔍</span>
 
               <input
                 type="search"
@@ -734,11 +633,9 @@
             id="keysList"
             class="admin-keys-list"
           >
-
             <div class="loading-state">
               Loading keys...
             </div>
-
           </div>
 
         </div>
@@ -746,9 +643,7 @@
       </section>
 
 
-      <!-- ================================================
-           NOTIFICATIONS SECTION
-           ================================================ -->
+      <!-- NOTIFICATIONS -->
 
       <section
         data-admin-section="notifications"
@@ -776,8 +671,6 @@
 
         </div>
 
-
-        <!-- Publish -->
 
         <div class="content-card">
 
@@ -849,8 +742,6 @@
         </div>
 
 
-        <!-- Notification List -->
-
         <div class="content-card">
 
           <div class="content-card-heading">
@@ -874,11 +765,9 @@
             id="notificationsList"
             class="admin-notifications-list"
           >
-
             <div class="loading-state">
               Loading notifications...
             </div>
-
           </div>
 
         </div>
@@ -1153,7 +1042,7 @@
 
         <button
           type="button"
-          id="closeKeysModal"
+          id="closeKeysModalBottom"
           class="secondary-btn"
         >
           Close
@@ -1165,10 +1054,6 @@
 
   </div>
 
-
-  <!-- =====================================================
-       JAVASCRIPT
-       ===================================================== -->
 
   <script src="/js/admin.js"></script>
 
