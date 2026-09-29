@@ -1,84 +1,46 @@
-'use strict';
+/* =========================================================
+   PREP MASTER — HOME PAGE
+   ========================================================= */
+
+const $ = (selector) =>
+  document.querySelector(selector);
+
+
+const state = {
+  apps: [],
+  view: "explore",
+  selected: null,
+
+  token:
+    localStorage.getItem("pm_token") || "",
+
+  unlocked:
+    new Set(
+      JSON.parse(
+        localStorage.getItem("pm_unlocked") || "[]"
+      )
+    )
+};
 
 
 /* =========================================================
-   CONFIG
-========================================================= */
+   CLIENT ID
+   ========================================================= */
 
-const API = '/api';
-
-
-/* =========================================================
-   STORAGE
-========================================================= */
-
-const TOKEN_KEY = 'pm_token';
-const USER_KEY = 'pm_user';
-const UNLOCKED_KEY = 'pm_unlocked';
-const CLIENT_KEY = 'pm_client_id';
-const THEME_KEY = 'pm_theme';
-
-
-/* =========================================================
-   STATE
-========================================================= */
-
-let apps = [];
-let currentApp = null;
-let currentUser = null;
-let notifications = [];
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-
-function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || '';
-}
-
-
-function getUnlocked() {
-  try {
-    return JSON.parse(
-      localStorage.getItem(UNLOCKED_KEY) || '[]'
-    );
-  } catch {
-    return [];
-  }
-}
-
-
-function saveUnlocked(list) {
-  localStorage.setItem(
-    UNLOCKED_KEY,
-    JSON.stringify(list)
-  );
-}
-
-
-function getClientId() {
+function clientId() {
 
   let id =
-    localStorage.getItem(CLIENT_KEY);
+    localStorage.getItem(
+      "pm_client_id"
+    );
 
   if (!id) {
 
     id =
-      'pm-' +
-      Date.now() +
-      '-' +
-      Math.random()
-        .toString(36)
-        .slice(2, 12);
+      crypto.randomUUID();
 
     localStorage.setItem(
-      CLIENT_KEY,
+      "pm_client_id",
       id
     );
   }
@@ -87,991 +49,677 @@ function getClientId() {
 }
 
 
-function escapeHtml(value) {
-
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-
 /* =========================================================
-   TOAST
-========================================================= */
+   HEADERS
+   ========================================================= */
 
-let toastTimer;
+function headers(json = false) {
 
-function showToast(message) {
+  const h = {
+    "X-Client-Id": clientId()
+  };
 
-  const toast = $('toast');
-
-  if (!toast) return;
-
-  toast.textContent = message;
-
-  toast.classList.add('show');
-
-  clearTimeout(toastTimer);
-
-  toastTimer =
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 2800);
-}
-
-
-/* =========================================================
-   THEME
-========================================================= */
-
-function applyTheme(theme) {
-
-  if (theme === 'dark') {
-    document.body.classList.add('dark');
-  } else {
-    document.body.classList.remove('dark');
+  if (json) {
+    h["Content-Type"] =
+      "application/json";
   }
 
-  localStorage.setItem(
-    THEME_KEY,
-    theme
-  );
+  if (state.token) {
+    h.Authorization =
+      `Bearer ${state.token}`;
+  }
 
-  updateThemeIcon();
-}
-
-
-function updateThemeIcon() {
-
-  const btn =
-    $('themeBtn');
-
-  if (!btn) return;
-
-  btn.textContent =
-    document.body.classList.contains('dark')
-      ? '☾'
-      : '☀';
-}
-
-
-function toggleTheme() {
-
-  const dark =
-    document.body.classList.contains('dark');
-
-  applyTheme(
-    dark ? 'light' : 'dark'
-  );
+  return h;
 }
 
 
 /* =========================================================
-   DRAWER
-========================================================= */
+   API
+   ========================================================= */
 
-function openDrawer() {
+async function api(url, options = {}) {
 
-  $('drawer')?.classList.add('show');
+  const response =
+    await fetch(url, {
+      ...options,
 
-  $('drawerOverlay')?.classList.add('show');
-}
+      headers: {
+        ...headers(
+          Boolean(options.body)
+        ),
 
-
-function closeDrawer() {
-
-  $('drawer')?.classList.remove('show');
-
-  $('drawerOverlay')?.classList.remove('show');
-}
-
-
-/* =========================================================
-   HOME / EXPLORE
-========================================================= */
-
-function goHome() {
-
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  });
-
-  setBottomActive('bottomHome');
-}
-
-
-function goToApps() {
-
-  const section =
-    $('appsSection');
-
-  if (!section) return;
-
-  setBottomActive('bottomExplore');
-
-  section.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start'
-  });
-}
-
-
-function setBottomActive(id) {
-
-  document
-    .querySelectorAll('.bottom-item')
-    .forEach(btn => {
-      btn.classList.remove('active');
+        ...(options.headers || {})
+      }
     });
 
-  $(id)?.classList.add('active');
+
+  const data =
+    await response
+      .json()
+      .catch(() => ({}));
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.error ||
+      "Something went wrong"
+    );
+  }
+
+
+  return data;
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+   ========================================================= */
+
+function esc(value) {
+
+  return String(value ?? "")
+    .replace(
+      /[&<>"']/g,
+      (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char])
+    );
 }
 
 
 /* =========================================================
    LOAD APPS
-========================================================= */
+   ========================================================= */
 
 async function loadApps() {
 
   try {
 
-    const response =
-      await fetch(
-        `${API}/apps`,
-        {
-          headers: authHeaders()
-        }
-      );
+    state.apps =
+      await api("/api/apps");
 
-    if (!response.ok) {
-      throw new Error(
-        'Apps load failed'
-      );
-    }
-
-    const data =
-      await response.json();
-
-    apps =
-      Array.isArray(data)
-        ? data
-        : (
-            data.apps ||
-            data.data ||
-            []
-          );
-
-    renderApps();
+    render();
 
   } catch (error) {
 
     console.error(error);
 
-    apps = [];
-
-    renderApps();
-
-    showToast(
-      'Apps load nahi ho paaye.'
-    );
+    $("#appsGrid").innerHTML = `
+      <div class="empty">
+        ${esc(error.message)}
+      </div>
+    `;
   }
 }
 
 
 /* =========================================================
-   AUTH HEADERS
-========================================================= */
+   SAVE UNLOCKED
+   ========================================================= */
 
-function authHeaders() {
+function saveUnlocked() {
 
-  const headers = {
-    'Content-Type':
-      'application/json'
-  };
+  localStorage.setItem(
+    "pm_unlocked",
+    JSON.stringify(
+      [...state.unlocked]
+    )
+  );
+}
 
-  const token =
-    getToken();
 
-  if (token) {
-    headers.Authorization =
-      `Bearer ${token}`;
-  }
+function isUnlocked(id) {
 
-  headers['X-Client-Id'] =
-    getClientId();
-
-  return headers;
+  return state.unlocked.has(id);
 }
 
 
 /* =========================================================
-   RENDER APPS
-========================================================= */
+   RENDER
+   ========================================================= */
 
-function renderApps() {
-
-  const grid =
-    $('appGrid');
-
-  const empty =
-    $('emptyApps');
+function render() {
 
   const search =
-    (
-      $('searchInput')?.value ||
-      ''
-    )
+    ($("#search")?.value || "")
       .trim()
       .toLowerCase();
 
-  if (!grid) return;
 
   let list =
-    [...apps];
+    state.apps.filter(
+      (app) => {
+
+        const text = [
+          app.name,
+          app.description,
+          app.category
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return text.includes(search);
+      }
+    );
 
 
   /* MY APPS */
 
   if (
-    window.pmCurrentTab ===
-    'my'
+    state.view === "myapps"
   ) {
 
-    const unlocked =
-      getUnlocked();
-
     list =
-      list.filter(app =>
-        unlocked.includes(
-          String(app.id)
-        )
+      list.filter(
+        (app) =>
+          isUnlocked(app.id)
       );
   }
 
 
-  /* SEARCH */
+  /* TITLE */
 
-  if (search) {
-
-    list =
-      list.filter(app => {
-
-        const text = [
-          app.name,
-          app.title,
-          app.description,
-          app.category
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-
-        return text.includes(search);
-      });
-  }
+  $("#viewTitle").textContent =
+    state.view === "myapps"
+      ? "My Apps"
+      : "Apps";
 
 
-  $('appCount').textContent =
-    `${list.length} Available`;
+  $("#appCount").textContent =
+    `${list.length} ${
+      list.length === 1
+        ? "app"
+        : "apps"
+    }`;
 
 
-  if (!list.length) {
+  /* EMPTY */
 
-    grid.innerHTML = '';
-
-    if (empty) {
-      empty.style.display =
-        'block';
-    }
-
-    return;
-  }
+  $("#empty").classList.toggle(
+    "hidden",
+    list.length !== 0
+  );
 
 
-  if (empty) {
-    empty.style.display =
-      'none';
-  }
+  /* CARDS */
 
-
-  grid.innerHTML =
+  $("#appsGrid").innerHTML =
     list
-      .map(app => {
+      .map(
+        (app) => `
 
-        const id =
-          escapeHtml(app.id);
+        <article
+          class="card"
+          data-id="${esc(app.id)}"
+        >
 
-        const name =
-          escapeHtml(
-            app.name ||
-            app.title ||
-            'App'
-          );
-
-        const description =
-          escapeHtml(
-            app.description ||
-            'Premium learning app'
-          );
-
-        const logo =
-          app.logoUrl ||
-          app.logo ||
-          '/assets/logo-light.png';
-
-        return `
-          <article
-            class="app-card"
-            onclick="openApp('${id}')"
+          <img
+            class="app-logo"
+            src="${esc(
+              app.logoUrl ||
+              "/assets/logo.png"
+            )}"
+            onerror="
+              this.src='/assets/logo.png'
+            "
+            alt=""
           >
 
-            <img
-              src="${escapeHtml(logo)}"
-              alt="${name}"
-              loading="lazy"
-              onerror="this.src='/assets/logo-light.png'"
-            />
 
-            <h3>${name}</h3>
+          <div>
 
-            <p>${description}</p>
+            <h3>
+              ${esc(app.name)}
+            </h3>
 
-          </article>
-        `;
+            <p>
+              ${esc(
+                app.description ||
+                "Learning app"
+              )}
+            </p>
 
-      })
-      .join('');
-}
+          </div>
 
+        </article>
 
-/* =========================================================
-   APP TABS
-========================================================= */
-
-function showApps() {
-
-  window.pmCurrentTab =
-    'apps';
-
-  $('appsTab')?.classList.add(
-    'active'
-  );
-
-  $('myAppsTab')?.classList.remove(
-    'active'
-  );
-
-  $('sectionTitle').textContent =
-    'All Apps';
-
-  renderApps();
-}
+      `
+      )
+      .join("");
 
 
-function showMyApps() {
+  /* CLICK */
 
-  window.pmCurrentTab =
-    'my';
+  document
+    .querySelectorAll(".card")
+    .forEach(
+      (card) => {
 
-  $('myAppsTab')?.classList.add(
-    'active'
-  );
+        card.onclick = () =>
+          openApp(
+            card.dataset.id
+          );
 
-  $('appsTab')?.classList.remove(
-    'active'
-  );
-
-  $('sectionTitle').textContent =
-    'My Apps';
-
-  renderApps();
-
-  setTimeout(() => {
-    $('appsSection')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  }, 50);
+      }
+    );
 }
 
 
 /* =========================================================
    OPEN APP
-========================================================= */
+   ========================================================= */
 
 function openApp(id) {
 
   const app =
-    apps.find(
-      item =>
-        String(item.id) ===
-        String(id)
+    state.apps.find(
+      (item) =>
+        item.id === id
     );
+
 
   if (!app) return;
 
-  currentApp = app;
 
-  const name =
-    app.name ||
-    app.title ||
-    'App';
+  /*
+    Agar app pehle unlock hai
+    to direct home URL open hoga.
+  */
 
-  const description =
-    app.description ||
-    'Premium learning app';
+  if (
+    isUnlocked(id)
+  ) {
+
+    if (app.homeUrl) {
+
+      window.location.href =
+        app.homeUrl;
+
+    } else {
+
+      alert(
+        "Admin has not added an App URL yet."
+      );
+    }
+
+    return;
+  }
 
 
-  $('modalAppName').textContent =
-    name;
+  state.selected = app;
 
-  $('modalAppDescription')
+
+  $("#detailName")
     .textContent =
-      description;
+    app.name;
 
 
-  const logo =
+  $("#detailDesc")
+    .textContent =
+    app.description || "";
+
+
+  $("#detailLogo").src =
     app.logoUrl ||
-    app.logo ||
-    '/assets/logo-light.png';
-
-  $('modalAppLogo').src =
-    logo;
+    "/assets/logo.png";
 
 
-  $('appKeyInput').value =
-    '';
+  $("#keyInput").value =
+    "";
 
 
-  $('appModal').style.display =
-    'flex';
+  $("#keyStatus")
+    .textContent =
+    "";
 
 
-  const unlocked =
-    getUnlocked()
-      .map(String)
-      .includes(
-        String(app.id)
+  $("#verifyBtn")
+    .textContent =
+    "Verify App Key";
+
+
+  const video =
+    app.purchaseVideoUrl;
+
+
+  if (video) {
+
+    $("#purchaseVideo")
+      .href = video;
+
+    $("#purchaseVideo")
+      .classList.remove(
+        "hidden"
       );
 
-
-  if (unlocked) {
-
-    $('verifyArea').innerHTML = `
-      <div
-        style="
-          padding:15px;
-          background:#eaf8ef;
-          color:#21864b;
-          border-radius:15px;
-          font-weight:700;
-        "
-      >
-        ✓ Premium already unlocked
-      </div>
-    `;
   } else {
 
-    $('verifyArea').innerHTML = `
-      <label>
-        Enter App Key
-      </label>
-
-      <input
-        id="appKeyInput"
-        type="text"
-        placeholder="Enter your key"
-        autocomplete="off"
-      />
-
-      <button
-        id="verifyKeyBtn"
-        class="primary-btn"
-        type="button"
-      >
-        Verify App Key
-      </button>
-    `;
-
-    $('verifyKeyBtn')
-      .addEventListener(
-        'click',
-        verifyCurrentApp
+    $("#purchaseVideo")
+      .classList.add(
+        "hidden"
       );
   }
-}
 
 
-/* =========================================================
-   CLOSE APP
-========================================================= */
-
-function closeAppModal() {
-
-  $('appModal').style.display =
-    'none';
-
-  currentApp = null;
+  $("#appModal")
+    .classList.add("show");
 }
 
 
 /* =========================================================
    VERIFY APP KEY
-========================================================= */
+   ========================================================= */
 
-async function verifyCurrentApp() {
+async function verify() {
 
-  if (!currentApp) return;
+  if (!state.selected)
+    return;
 
-  const input =
-    $('appKeyInput');
 
   const key =
-    input?.value.trim();
+    $("#keyInput")
+      .value
+      .trim();
+
 
   if (!key) {
 
-    showToast(
-      'App key enter karo.'
-    );
+    $("#keyStatus")
+      .textContent =
+      "Please enter your app key.";
 
     return;
   }
 
 
   const button =
-    $('verifyKeyBtn');
+    $("#verifyBtn");
 
-  if (button) {
 
-    button.disabled =
-      true;
+  button.disabled = true;
 
-    button.textContent =
-      'Verifying...';
-  }
+  button.textContent =
+    "Checking...";
+
+
+  $("#keyStatus")
+    .textContent =
+    "Checking your key...";
 
 
   try {
 
-    const response =
-      await fetch(
-        `${API}/keys/verify`,
-        {
-          method: 'POST',
+    await api(
+      "/api/keys/verify",
+      {
+        method: "POST",
 
-          headers:
-            authHeaders(),
+        body:
+          JSON.stringify({
+            appId:
+              state.selected.id,
 
-          body:
-            JSON.stringify({
-              key,
-              appId:
-                currentApp.id
-            })
-        }
-      );
-
-
-    const data =
-      await response.json()
-        .catch(() => ({}));
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.message ||
-        data.error ||
-        'Invalid app key'
-      );
-    }
-
-
-    const unlocked =
-      getUnlocked();
-
-
-    if (
-      !unlocked
-        .map(String)
-        .includes(
-          String(currentApp.id)
-        )
-    ) {
-
-      unlocked.push(
-        currentApp.id
-      );
-
-      saveUnlocked(
-        unlocked
-      );
-    }
-
-
-    showToast(
-      'Premium access unlocked!'
+            key
+          })
+      }
     );
+
+
+    /* SAVE UNLOCK */
+
+    state.unlocked.add(
+      state.selected.id
+    );
+
+    saveUnlocked();
+
+
+    $("#keyStatus")
+      .textContent =
+      "Access unlocked successfully.";
+
+
+    button.textContent =
+      "Unlocked";
 
 
     const url =
-      data.homeUrl ||
-      currentApp.homeUrl ||
-      currentApp.url;
+      state.selected.homeUrl;
 
 
-    setTimeout(() => {
+    setTimeout(
+      () => {
 
-      closeAppModal();
+        $("#appModal")
+          .classList.remove(
+            "show"
+          );
 
-      if (url) {
-        window.location.href =
-          url;
-      }
 
-    }, 700);
+        if (url) {
+
+          window.location.href =
+            url;
+
+        } else {
+
+          render();
+        }
+
+      },
+      500
+    );
 
 
   } catch (error) {
 
     console.error(error);
 
-    showToast(
-      error.message ||
-      'Key verification failed.'
-    );
+    $("#keyStatus")
+      .textContent =
+      error.message;
+
+    button.textContent =
+      "Verify App Key";
+
 
   } finally {
 
-    if (button) {
-
-      button.disabled =
-        false;
-
-      button.textContent =
-        'Verify App Key';
-    }
+    button.disabled =
+      false;
   }
 }
 
 
 /* =========================================================
-   PURCHASE HELP
-========================================================= */
+   SET VIEW
+   ========================================================= */
 
-function openPurchaseHelp() {
+function setView(view) {
 
-  if (!currentApp) return;
+  state.view =
+    view;
 
-  const url =
-    currentApp.purchaseVideoUrl ||
-    currentApp.purchaseHelpUrl ||
-    currentApp.videoUrl;
 
-  if (!url) {
+  /*
+    Menu close
+  */
 
-    showToast(
-      'Purchase help video available nahi hai.'
+  $("#drawer")
+    .classList.remove(
+      "open"
     );
 
-    return;
-  }
-
-  window.open(
-    url,
-    '_blank'
-  );
-}
+  $("#shade")
+    .classList.remove(
+      "open"
+    );
 
 
-/* =========================================================
-   NOTIFICATIONS
-========================================================= */
-
-async function loadNotifications() {
-
-  try {
-
-    const response =
-      await fetch(
-        `${API}/notifications`,
-        {
-          headers:
-            authHeaders()
-        }
-      );
-
-
-    if (!response.ok) {
-      throw new Error(
-        'Notifications load failed'
-      );
-    }
-
-
-    const data =
-      await response.json();
-
-
-    notifications =
-      Array.isArray(data)
-        ? data
-        : (
-            data.notifications ||
-            data.data ||
-            []
-          );
-
-
-    renderNotifications();
-
-  } catch (error) {
-
-    console.error(error);
-
-    notifications = [];
-
-    renderNotifications();
-
-  }
-}
-
-
-function renderNotifications() {
-
-  const list =
-    $('notificationList');
-
-  const empty =
-    $('notificationEmpty');
-
-  if (!list) return;
-
-
-  if (!notifications.length) {
-
-    list.innerHTML = '';
-
-    if (empty) {
-      empty.style.display =
-        'block';
-    }
-
-    return;
-  }
-
-
-  if (empty) {
-    empty.style.display =
-      'none';
-  }
-
-
-  list.innerHTML =
-    notifications
-      .map(item => {
-
-        const title =
-          escapeHtml(
-            item.title ||
-            item.name ||
-            'Update'
-          );
-
-        const message =
-          escapeHtml(
-            item.message ||
-            item.description ||
-            item.content ||
-            ''
-          );
-
-
-        const rawDate =
-          item.created_at ||
-          item.createdAt ||
-          item.date;
-
-
-        let dateText = '';
-
-        if (rawDate) {
-
-          const date =
-            new Date(rawDate);
-
-          if (!Number.isNaN(
-            date.getTime()
-          )) {
-
-            dateText =
-              date.toLocaleString(
-                'en-IN',
-                {
-                  dateStyle:
-                    'medium',
-                  timeStyle:
-                    'short'
-                }
-              );
-          }
-        }
-
-
-        return `
-          <div class="notification-item">
-
-            <h3>
-              ${title}
-            </h3>
-
-            <p>
-              ${message}
-            </p>
-
-            ${
-              dateText
-                ? `
-                  <div class="notification-date">
-                    ${escapeHtml(dateText)}
-                  </div>
-                `
-                : ''
-            }
-
-          </div>
-        `;
-
-      })
-      .join('');
-}
-
-
-function openNotifications() {
-
-  $('notificationModal')
-    .style.display =
-      'flex';
-
-  loadNotifications();
-}
-
-
-function closeNotifications() {
-
-  $('notificationModal')
-    .style.display =
-      'none';
+  render();
 }
 
 
 /* =========================================================
    ACCOUNT
-========================================================= */
+   ========================================================= */
 
-function openAccount() {
+async function account() {
 
-  $('accountModal').style.display =
-    'flex';
+  $("#accountModal")
+    .classList.add(
+      "show"
+    );
 
-  updateAccountUI();
+
+  if (!state.token) {
+
+    showLoggedOut();
+
+    return;
+  }
+
+
+  try {
+
+    const user =
+      await api(
+        "/api/me"
+      );
+
+
+    state.unlocked =
+      new Set(
+        user.unlockedApps ||
+        []
+      );
+
+
+    saveUnlocked();
+
+    showAccount(user);
+
+    render();
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    state.token = "";
+
+    localStorage.removeItem(
+      "pm_token"
+    );
+
+    showLoggedOut();
+  }
 }
 
 
-function closeAccount() {
+function showAccount(user) {
 
-  $('accountModal').style.display =
-    'none';
+  $("#accountLoggedOut")
+    .classList.add(
+      "hidden"
+    );
+
+
+  $("#accountLoggedIn")
+    .classList.remove(
+      "hidden"
+    );
+
+
+  $("#accountInfo")
+    .textContent =
+    `Logged in as ${user.username}`;
+
+
+  $("#accountStatus")
+    .textContent = "";
 }
 
 
-function updateAccountUI() {
+function showLoggedOut() {
 
-  if (currentUser) {
+  $("#accountLoggedOut")
+    .classList.remove(
+      "hidden"
+    );
 
-    $('loginArea').style.display =
-      'none';
 
-    $('registerArea').style.display =
-      'none';
+  $("#accountLoggedIn")
+    .classList.add(
+      "hidden"
+    );
 
-    $('loggedInArea').style.display =
-      'block';
 
-    $('loggedUsername')
+  $("#accountStatus")
+    .textContent = "";
+}
+
+
+/* =========================================================
+   LOGIN / REGISTER
+   ========================================================= */
+
+async function login(
+  register = false
+) {
+
+  const username =
+    $("#username")
+      .value
+      .trim();
+
+
+  const password =
+    $("#password")
+      .value;
+
+
+  if (!username || !password) {
+
+    $("#accountStatus")
       .textContent =
-        currentUser.username ||
-        currentUser.name ||
-        '';
-
-  } else {
-
-    $('loginArea').style.display =
-      'block';
-
-    $('registerArea').style.display =
-      'none';
-
-    $('loggedInArea').style.display =
-      'none';
-  }
-}
-
-
-/* =========================================================
-   LOGIN
-========================================================= */
-
-async function login() {
-
-  const username =
-    $('loginUsername')
-      .value
-      .trim();
-
-  const password =
-    $('loginPassword')
-      .value;
-
-
-  if (!username || !password) {
-
-    showToast(
-      'Username aur password enter karo.'
-    );
+      "Username aur password enter karo.";
 
     return;
   }
 
 
   const button =
-    $('loginBtn');
+    register
+      ? $("#registerBtn")
+      : $("#loginBtn");
 
-  button.disabled =
-    true;
 
-  button.textContent =
-    'Logging in...';
+  button.disabled = true;
+
+
+  $("#accountStatus")
+    .textContent =
+    register
+      ? "Creating account..."
+      : "Logging in...";
 
 
   try {
 
-    const response =
-      await fetch(
-        `${API}/auth/login`,
-        {
-          method: 'POST',
+    const data =
+      await api(
+        register
+          ? "/api/auth/register"
+          : "/api/auth/login",
 
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
+        {
+          method: "POST",
 
           body:
             JSON.stringify({
@@ -1082,594 +730,300 @@ async function login() {
       );
 
 
-    const data =
-      await response.json()
-        .catch(() => ({}));
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.message ||
-        data.error ||
-        'Login failed'
-      );
-    }
-
-
-    const token =
-      data.token ||
-      data.accessToken;
-
-
-    if (!token) {
-      throw new Error(
-        'Login token nahi mila.'
-      );
-    }
+    state.token =
+      data.token;
 
 
     localStorage.setItem(
-      TOKEN_KEY,
-      token
+      "pm_token",
+      state.token
     );
 
 
-    currentUser =
-      data.user ||
-      data.data ||
-      {
-        username
-      };
+    state.unlocked =
+      new Set(
+        data.user?.unlockedApps ||
+        []
+      );
 
 
-    localStorage.setItem(
-      USER_KEY,
-      JSON.stringify(
-        currentUser
-      )
+    saveUnlocked();
+
+
+    showAccount(
+      data.user
     );
 
 
-    showToast(
-      'Login successful!'
-    );
+    render();
 
-
-    updateAccountUI();
-
-    await loadMe();
 
   } catch (error) {
 
-    showToast(
-      error.message ||
-      'Login failed.'
-    );
+    console.error(error);
+
+    $("#accountStatus")
+      .textContent =
+      error.message;
+
 
   } finally {
 
     button.disabled =
       false;
-
-    button.textContent =
-      'Login';
-  }
-}
-
-
-/* =========================================================
-   REGISTER
-========================================================= */
-
-async function register() {
-
-  const username =
-    $('registerUsername')
-      .value
-      .trim();
-
-  const password =
-    $('registerPassword')
-      .value;
-
-
-  if (!username || !password) {
-
-    showToast(
-      'Username aur password enter karo.'
-    );
-
-    return;
-  }
-
-
-  const button =
-    $('registerBtn');
-
-  button.disabled =
-    true;
-
-  button.textContent =
-    'Creating...';
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API}/auth/register`,
-        {
-          method: 'POST',
-
-          headers: {
-            'Content-Type':
-              'application/json'
-          },
-
-          body:
-            JSON.stringify({
-              username,
-              password
-            })
-        }
-      );
-
-
-    const data =
-      await response.json()
-        .catch(() => ({}));
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        data.message ||
-        data.error ||
-        'Registration failed'
-      );
-    }
-
-
-    showToast(
-      'Account created. Ab login karo.'
-    );
-
-
-    $('registerArea')
-      .style.display =
-        'none';
-
-    $('loginArea')
-      .style.display =
-        'block';
-
-    $('loginUsername').value =
-      username;
-
-    $('loginPassword').value =
-      '';
-
-
-  } catch (error) {
-
-    showToast(
-      error.message ||
-      'Registration failed.'
-    );
-
-  } finally {
-
-    button.disabled =
-      false;
-
-    button.textContent =
-      'Create Account';
-  }
-}
-
-
-/* =========================================================
-   LOAD ME
-========================================================= */
-
-async function loadMe() {
-
-  const token =
-    getToken();
-
-  if (!token) {
-
-    currentUser = null;
-
-    updateAccountUI();
-
-    return;
-  }
-
-
-  try {
-
-    const response =
-      await fetch(
-        `${API}/me`,
-        {
-          headers:
-            authHeaders()
-        }
-      );
-
-
-    if (!response.ok) {
-
-      throw new Error(
-        'Session expired'
-      );
-    }
-
-
-    const data =
-      await response.json();
-
-
-    currentUser =
-      data.user ||
-      data.data ||
-      data;
-
-
-    localStorage.setItem(
-      USER_KEY,
-      JSON.stringify(
-        currentUser
-      )
-    );
-
-
-    updateAccountUI();
-
-
-  } catch (error) {
-
-    localStorage.removeItem(
-      TOKEN_KEY
-    );
-
-    localStorage.removeItem(
-      USER_KEY
-    );
-
-    currentUser = null;
-
-    updateAccountUI();
   }
 }
 
 
 /* =========================================================
    LOGOUT
-========================================================= */
+   ========================================================= */
 
 function logout() {
 
-  localStorage.removeItem(
-    TOKEN_KEY
-  );
+  state.token = "";
+
+  state.unlocked =
+    new Set();
+
 
   localStorage.removeItem(
-    USER_KEY
+    "pm_token"
   );
 
-  currentUser = null;
 
-  updateAccountUI();
-
-  closeAccount();
-
-  showToast(
-    'Logged out successfully.'
+  localStorage.removeItem(
+    "pm_unlocked"
   );
+
+
+  showLoggedOut();
+
+  render();
 }
 
 
 /* =========================================================
-   INIT
-========================================================= */
+   CLOSE MODALS
+   ========================================================= */
 
-async function initApp() {
+function closeModal(id) {
 
-  /* theme */
+  const modal =
+    document.getElementById(id);
 
-  applyTheme(
-    localStorage.getItem(
-      THEME_KEY
-    ) || 'light'
-  );
+  if (modal) {
 
-
-  /* client ID */
-
-  getClientId();
-
-
-  /* user */
-
-  await loadMe();
-
-
-  /* apps */
-
-  await loadApps();
-
-
-  /* notifications */
-
-  await loadNotifications();
-
-
-  /* splash */
-
-  setTimeout(() => {
-
-    $('splash')
-      ?.classList
-      .add('hide');
-
-  }, 700);
+    modal.classList.remove(
+      "show"
+    );
+  }
 }
 
 
 /* =========================================================
    EVENTS
-========================================================= */
+   ========================================================= */
 
-function setupEvents() {
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
 
-  $('themeBtn')
-    ?.addEventListener(
-      'click',
-      toggleTheme
-    );
+    /* SEARCH */
 
-
-  $('menuBtn')
-    ?.addEventListener(
-      'click',
-      openDrawer
-    );
+    $("#search")
+      .addEventListener(
+        "input",
+        render
+      );
 
 
-  $('closeDrawer')
-    ?.addEventListener(
-      'click',
-      closeDrawer
-    );
+    /* VERIFY */
+
+    $("#verifyBtn")
+      .addEventListener(
+        "click",
+        verify
+      );
 
 
-  $('drawerOverlay')
-    ?.addEventListener(
-      'click',
-      closeDrawer
-    );
+    /* THREE DOT MENU */
 
+    $("#menuBtn")
+      .addEventListener(
+        "click",
+        () => {
 
-  $('notificationBtn')
-    ?.addEventListener(
-      'click',
-      openNotifications
-    );
+          $("#drawer")
+            .classList.add(
+              "open"
+            );
 
-
-  $('closeNotification')
-    ?.addEventListener(
-      'click',
-      closeNotifications
-    );
-
-
-  $('accountBtn')
-    ?.addEventListener(
-      'click',
-      openAccount
-    );
-
-
-  $('appsTab')
-    ?.addEventListener(
-      'click',
-      showApps
-    );
-
-
-  $('myAppsTab')
-    ?.addEventListener(
-      'click',
-      showMyApps
-    );
-
-
-  $('searchInput')
-    ?.addEventListener(
-      'input',
-      renderApps
-    );
-
-
-  $('purchaseHelpBtn')
-    ?.addEventListener(
-      'click',
-      openPurchaseHelp
-    );
-
-
-  $('loginBtn')
-    ?.addEventListener(
-      'click',
-      login
-    );
-
-
-  $('registerBtn')
-    ?.addEventListener(
-      'click',
-      register
-    );
-
-
-  $('logoutBtn')
-    ?.addEventListener(
-      'click',
-      logout
-    );
-
-
-  $('showRegisterBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        $('loginArea')
-          .style.display =
-            'none';
-
-        $('registerArea')
-          .style.display =
-            'block';
-
-      }
-    );
-
-
-  $('showLoginBtn')
-    ?.addEventListener(
-      'click',
-      () => {
-
-        $('registerArea')
-          .style.display =
-            'none';
-
-        $('loginArea')
-          .style.display =
-            'block';
-
-      }
-    );
-
-
-  /* close modal by clicking outside */
-
-  $('appModal')
-    ?.addEventListener(
-      'click',
-      event => {
-
-        if (
-          event.target ===
-          $('appModal')
-        ) {
-          closeAppModal();
+          $("#shade")
+            .classList.add(
+              "open"
+            );
         }
-
-      }
-    );
+      );
 
 
-  $('notificationModal')
-    ?.addEventListener(
-      'click',
-      event => {
+    /* CLOSE MENU */
 
-        if (
-          event.target ===
-          $('notificationModal')
-        ) {
-          closeNotifications();
+    $("#closeMenu")
+      .addEventListener(
+        "click",
+        () => {
+
+          $("#drawer")
+            .classList.remove(
+              "open"
+            );
+
+          $("#shade")
+            .classList.remove(
+              "open"
+            );
         }
-
-      }
-    );
+      );
 
 
-  $('accountModal')
-    ?.addEventListener(
-      'click',
-      event => {
+    $("#shade")
+      .addEventListener(
+        "click",
+        () => {
 
-        if (
-          event.target ===
-          $('accountModal')
-        ) {
-          closeAccount();
+          $("#drawer")
+            .classList.remove(
+              "open"
+            );
+
+          $("#shade")
+            .classList.remove(
+              "open"
+            );
         }
-
-      }
-    );
-}
+      );
 
 
-/* =========================================================
-   INITIALIZE
-========================================================= */
+    /* MENU OPTIONS */
 
-if (
-  document.readyState ===
-  'loading'
-) {
+    document
+      .querySelectorAll(
+        "[data-view]"
+      )
+      .forEach(
+        (item) => {
 
-  document.addEventListener(
-    'DOMContentLoaded',
-    () => {
+          item.addEventListener(
+            "click",
+            () => {
 
-      setupEvents();
-      initApp();
+              setView(
+                item.dataset.view
+              );
 
-    },
-    {
-      once: true
-    }
-  );
+            }
+          );
 
-} else {
-
-  setupEvents();
-  initApp();
-}
+        }
+      );
 
 
-/* =========================================================
-   GLOBAL FUNCTIONS
-========================================================= */
+    /* ACCOUNT */
 
-window.goToApps =
-  goToApps;
+    $("#accountBtn")
+      .addEventListener(
+        "click",
+        account
+      );
 
-window.goHome =
-  goHome;
 
-window.showMyApps =
-  showMyApps;
+    /* LOGIN */
 
-window.openAccount =
-  openAccount;
+    $("#loginBtn")
+      .addEventListener(
+        "click",
+        () =>
+          login(false)
+      );
 
-window.closeAccount =
-  closeAccount;
 
-window.openApp =
-  openApp;
+    /* REGISTER */
 
-window.closeAppModal =
-  closeAppModal;
+    $("#registerBtn")
+      .addEventListener(
+        "click",
+        () =>
+          login(true)
+      );
 
-window.openNotifications =
-  openNotifications;
 
-window.closeNotifications =
-  closeNotifications;
+    /* LOGOUT */
 
-window.closeDrawer =
-  closeDrawer;
+    $("#logoutBtn")
+      .addEventListener(
+        "click",
+        logout
+      );
 
-window.logout =
-  logout;
+
+    /* CLOSE BUTTONS */
+
+    document
+      .querySelectorAll(
+        "[data-close]"
+      )
+      .forEach(
+        (button) => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              closeModal(
+                button.dataset.close
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+    /* CLOSE MODAL WHEN CLICKING OUTSIDE */
+
+    document
+      .querySelectorAll(
+        ".modal"
+      )
+      .forEach(
+        (modal) => {
+
+          modal.addEventListener(
+            "click",
+            (event) => {
+
+              if (
+                event.target ===
+                modal
+              ) {
+
+                modal.classList.remove(
+                  "show"
+                );
+              }
+
+            }
+          );
+
+        }
+      );
+
+
+    /* LOAD */
+
+    loadApps();
+
+  }
+);
