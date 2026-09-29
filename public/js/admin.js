@@ -1004,4 +1004,356 @@ function openSection(sectionName) {
     (section) => {
       section.style.display =
         section.dataset.adminSection === sectionName
-          ? "
+          ? "block"
+          : "none";
+    }
+  );
+
+  $$(".admin-nav-item").forEach(
+    (button) => {
+      button.classList.toggle(
+        "active",
+        button.dataset.section === sectionName
+      );
+    }
+  );
+
+  closeMobileSidebar();
+}
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+function toggleMobileSidebar() {
+  const sidebar =
+    $("#adminSidebar");
+
+  const overlay =
+    $("#adminOverlay");
+
+  sidebar?.classList.toggle("open");
+  overlay?.classList.toggle("active");
+}
+
+
+function closeMobileSidebar() {
+  $("#adminSidebar")
+    ?.classList.remove("open");
+
+  $("#adminOverlay")
+    ?.classList.remove("active");
+}
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+function logoutAdmin(reload = true) {
+  adminToken = "";
+
+  localStorage.removeItem(
+    "pm_admin_token"
+  );
+
+  if (reload) {
+    location.reload();
+  } else {
+    showLoginScreen();
+  }
+}
+
+
+/* =========================================================
+   THEME
+   ========================================================= */
+
+function applyTheme(theme) {
+  document.body.classList.toggle(
+    "dark",
+    theme === "dark"
+  );
+
+  const buttons = [
+    $("#adminThemeToggle"),
+    $("#themeToggle")
+  ];
+
+  buttons.forEach((button) => {
+    if (button) {
+      button.textContent =
+        theme === "dark"
+          ? "☀️"
+          : "🌙";
+    }
+  });
+}
+
+
+function toggleTheme() {
+  const current =
+    localStorage.getItem(
+      "pm_admin_theme"
+    ) || "light";
+
+  const next =
+    current === "dark"
+      ? "light"
+      : "dark";
+
+  localStorage.setItem(
+    "pm_admin_theme",
+    next
+  );
+
+  applyTheme(next);
+}
+
+
+/* =========================================================
+   EVENT LISTENERS
+   ========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
+
+    /* Theme */
+
+    const savedTheme =
+      localStorage.getItem(
+        "pm_admin_theme"
+      ) || "light";
+
+    applyTheme(savedTheme);
+
+
+    /* Login */
+
+    const loginForm =
+      $("#adminLoginForm");
+
+    if (loginForm) {
+      loginForm.addEventListener(
+        "submit",
+        handleAdminLogin
+      );
+    }
+
+
+    /* Navigation */
+
+    $$(".admin-nav-item").forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            openSection(
+              button.dataset.section
+            );
+          }
+        );
+      }
+    );
+
+
+    /* Quick actions */
+
+    $$(".quick-action").forEach(
+      (button) => {
+        button.addEventListener(
+          "click",
+          () => {
+
+            const section =
+              button.dataset.section;
+
+            if (section) {
+              openSection(section);
+            }
+
+            if (
+              button.id === "addAppBtn"
+            ) {
+              openAppModal();
+            }
+          }
+        );
+      }
+    );
+
+
+    /* New App */
+
+    $("#newAppBtn")
+      ?.addEventListener(
+        "click",
+        () => openAppModal()
+      );
+
+
+    /* Close App Modal */
+
+    $("#closeAppModal")
+      ?.addEventListener(
+        "click",
+        closeAppModal
+      );
+
+    $("#cancelApp")
+      ?.addEventListener(
+        "click",
+        closeAppModal
+      );
+
+
+    /* App Form */
+
+    $("#appForm")
+      ?.addEventListener(
+        "submit",
+        saveApp
+      );
+
+
+    /* App Search */
+
+    $("#appSearch")
+      ?.addEventListener(
+        "input",
+        renderApps
+      );
+
+
+    /* Key Search */
+
+    $("#keySearch")
+      ?.addEventListener(
+        "input",
+        loadKeys
+      );
+
+
+    /* Generate Keys */
+
+    $("#keyGeneratorForm")
+      ?.addEventListener(
+        "submit",
+        generateKeys
+      );
+
+
+    /* Keys Modal */
+
+    $("#closeKeysModal")
+      ?.addEventListener(
+        "click",
+        () => {
+          $("#keysResultModal").style.display =
+            "none";
+        }
+      );
+
+
+    $("#closeKeysModalBottom")
+      ?.addEventListener(
+        "click",
+        () => {
+          $("#keysResultModal").style.display =
+            "none";
+        }
+      );
+
+
+    $("#copyGeneratedKeys")
+      ?.addEventListener(
+        "click",
+        copyGeneratedKeys
+      );
+
+
+    /* Notifications */
+
+    $("#notificationForm")
+      ?.addEventListener(
+        "submit",
+        publishNotification
+      );
+
+
+    /* Theme */
+
+    $("#adminThemeToggle")
+      ?.addEventListener(
+        "click",
+        toggleTheme
+      );
+
+    $("#themeToggle")
+      ?.addEventListener(
+        "click",
+        toggleTheme
+      );
+
+
+    /* Logout */
+
+    $("#adminLogout")
+      ?.addEventListener(
+        "click",
+        () => logoutAdmin(true)
+      );
+
+    $("#adminLogoutTop")
+      ?.addEventListener(
+        "click",
+        () => logoutAdmin(true)
+      );
+
+
+    /* Mobile menu */
+
+    $("#adminMenuToggle")
+      ?.addEventListener(
+        "click",
+        toggleMobileSidebar
+      );
+
+    $("#adminOverlay")
+      ?.addEventListener(
+        "click",
+        closeMobileSidebar
+      );
+
+
+    /* Existing login */
+
+    if (adminToken) {
+
+      try {
+
+        await api("/me");
+
+        showAdminDashboard();
+
+        await loadEverything();
+
+      } catch (error) {
+
+        console.log(
+          "Saved admin session invalid."
+        );
+
+        logoutAdmin(false);
+      }
+
+    } else {
+
+      showLoginScreen();
+
+    }
+
+  }
+);
