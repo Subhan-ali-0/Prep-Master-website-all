@@ -1,0 +1,916 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --text: #121827;
+  --muted: #6d7585;
+  --border: #e5e9f0;
+  --primary: #315efb;
+  --primary-dark: #244bd0;
+  --input: #ffffff;
+  --soft: #edf1f7;
+  --success-bg: #edf8ef;
+  --success-text: #28743b;
+}
+
+body.dark {
+  --bg: #0b0e14;
+  --card: #121720;
+  --text: #f4f6fa;
+  --muted: #929aaa;
+  --border: #252c38;
+  --primary: #4b72ff;
+  --primary-dark: #3c60df;
+  --input: #151b25;
+  --soft: #1b222e;
+  --success-bg: #17321f;
+  --success-text: #72c487;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Arial, sans-serif;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* =========================
+   GENERAL
+========================= */
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* =========================
+   TOP BAR
+========================= */
+
+.topbar {
+  height: 68px;
+  width: 100%;
+  padding: 0 6%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+}
+
+.dark .topbar {
+  background: rgba(12, 15, 21, 0.92);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.brand img {
+  width: 37px;
+  height: 37px;
+  object-fit: contain;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.icon-btn {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: transparent;
+  color: var(--text);
+
+  font-size: 18px;
+  transition: 0.15s;
+}
+
+.icon-btn:hover {
+  background: var(--soft);
+}
+
+/* =========================
+   HERO
+========================= */
+
+.hero {
+  max-width: 1120px;
+  margin: 30px auto 22px;
+
+  min-height: 220px;
+  padding: 35px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border: 1px solid var(--border);
+  border-radius: 25px;
+
+  background:
+    radial-gradient(circle at 85% 20%, rgba(49, 94, 251, 0.12), transparent 30%),
+    linear-gradient(135deg, #edf3ff, #ffffff);
+
+  overflow: hidden;
+}
+
+.dark .hero {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(75, 114, 255, 0.13), transparent 30%),
+    linear-gradient(135deg, #151c29, #10141c);
+}
+
+.hero > div:first-child {
+  max-width: 700px;
+}
+
+.eyebrow {
+  display: inline-block;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+
+  color: var(--primary);
+}
+
+.hero h1 {
+  margin: 10px 0 8px;
+
+  font-size: clamp(30px, 5vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+}
+
+.hero p {
+  margin: 0;
+
+  max-width: 620px;
+
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.hero-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 145px;
+  height: 145px;
+  flex-shrink: 0;
+
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.dark .hero-logo {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+
+.hero-logo img {
+  width: 105px;
+  height: 105px;
+  object-fit: contain;
+}
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+  max-width: 1120px;
+  margin: 0 auto 22px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar input {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 14px 16px;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  outline: none;
+
+  background: var(--input);
+  color: var(--text);
+
+  transition: 0.15s;
+}
+
+.toolbar input::placeholder {
+  color: var(--muted);
+}
+
+.toolbar input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.1);
+}
+
+.tabs {
+  display: flex;
+  gap: 3px;
+
+  padding: 4px;
+
+  border-radius: 14px;
+  background: var(--soft);
+}
+
+.tab {
+  border: 0;
+  border-radius: 11px;
+
+  padding: 10px 16px;
+
+  background: transparent;
+  color: var(--text);
+
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+/* =========================
+   MAIN CONTENT
+========================= */
+
+main > section:not(.hero),
+.toolbar {
+  width: calc(100% - 32px);
+}
+
+main > section:not(.hero) {
+  max-width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 14px;
+}
+
+.section-title h2 {
+  margin: 0;
+
+  font-size: 22px;
+  letter-spacing: -0.3px;
+}
+
+.section-title span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* =========================
+   APP GRID
+========================= */
+
+.grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fill, minmax(225px, 1fr));
+
+  gap: 16px;
+
+  padding-bottom: 55px;
+}
+
+.card {
+  min-width: 0;
+
+  padding: 18px;
+
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s,
+    border-color 0.18s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.08);
+
+  border-color: rgba(49, 94, 251, 0.25);
+}
+
+.dark .card:hover {
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
+}
+
+.app-logo {
+  width: 58px;
+  height: 58px;
+
+  object-fit: contain;
+
+  padding: 8px;
+
+  border-radius: 15px;
+
+  background: var(--soft);
+}
+
+.card h3 {
+  margin: 13px 0 6px;
+
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.card p {
+  margin: 0;
+
+  min-height: 38px;
+
+  color: var(--muted);
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.badge {
+  display: inline-block;
+
+  margin-top: 14px;
+  padding: 6px 9px;
+
+  border-radius: 999px;
+
+  background: var(--success-bg);
+  color: var(--success-text);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* =========================
+   EMPTY
+========================= */
+
+.empty {
+  padding: 55px 20px;
+
+  text-align: center;
+
+  color: var(--muted);
+
+  font-size: 14px;
+}
+
+/* =========================
+   SPLASH
+========================= */
+
+.splash {
+  position: fixed;
+  inset: 0;
+
+  z-index: 100;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--bg);
+
+  animation: splashHide 1.5s forwards;
+}
+
+.splash img {
+  width: 105px;
+  height: 105px;
+
+  object-fit: contain;
+
+  animation: logoPop 0.8s ease;
+}
+
+.splash div {
+  margin-top: 12px;
+
+  font-size: 21px;
+  font-weight: 800;
+
+  animation: textFade 0.8s ease;
+}
+
+@keyframes logoPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+
+  70% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes textFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splashHide {
+  0%,
+  75% {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* =========================
+   SIDE DRAWER
+========================= */
+
+.drawer {
+  position: fixed;
+
+  top: 0;
+  right: -320px;
+  bottom: 0;
+
+  width: 305px;
+
+  z-index: 50;
+
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  background: var(--card);
+
+  box-shadow: -12px 0 35px rgba(0, 0, 0, 0.15);
+
+  transition: right 0.22s ease;
+}
+
+.drawer.open {
+  right: 0;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 7px 5px 20px;
+}
+
+.drawer-head b {
+  font-size: 18px;
+}
+
+.drawer-head button {
+  width: 38px;
+  height: 38px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+  color: var(--text);
+
+  font-size: 25px;
+}
+
+.drawer-head button:hover {
+  background: var(--soft);
+}
+
+.drawer > button,
+.drawer > a {
+  width: 100%;
+
+  padding: 13px 12px;
+
+  border: 0;
+  border-radius: 12px;
+
+  background: transparent;
+
+  color: var(--text);
+
+  text-align: left;
+  text-decoration: none;
+
+  font-size: 14px;
+
+  cursor: pointer;
+}
+
+.drawer > button:hover,
+.drawer > a:hover {
+  background: var(--soft);
+}
+
+.shade {
+  position: fixed;
+  inset: 0;
+
+  z-index: 40;
+
+  background: rgba(0, 0, 0, 0.55);
+
+  display: none;
+}
+
+.shade.open {
+  display: block;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+
+  z-index: 70;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  padding: 18px;
+
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-card {
+  position: relative;
+
+  width: min(460px, 100%);
+
+  max-height: 90vh;
+  overflow-y: auto;
+
+  padding: 27px;
+
+  border-radius: 22px;
+
+  background: var(--card);
+  color: var(--text);
+
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+
+  animation: modalIn 0.18s ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.x {
+  position: absolute;
+
+  top: 11px;
+  right: 13px;
+
+  width: 38px;
+  height: 38px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+  color: var(--text);
+
+  font-size: 25px;
+}
+
+.x:hover {
+  background: var(--soft);
+}
+
+.modal-card h3 {
+  margin: 8px 0 8px;
+
+  font-size: 21px;
+}
+
+.modal-card p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.app-modal {
+  text-align: left;
+}
+
+.detail-logo {
+  width: 75px;
+  height: 75px;
+
+  object-fit: contain;
+
+  padding: 8px;
+
+  border-radius: 17px;
+
+  background: var(--soft);
+}
+
+.modal-card label {
+  display: block;
+
+  margin: 18px 0 6px;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modal-card input {
+  width: 100%;
+
+  padding: 13px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  outline: none;
+
+  background: var(--input);
+  color: var(--text);
+}
+
+.modal-card input:focus {
+  border-color: var(--primary);
+
+  box-shadow: 0 0 0 3px rgba(49, 94, 251, 0.1);
+}
+
+/* =========================
+   MODAL BUTTONS
+========================= */
+
+.primary,
+.secondary {
+  display: block;
+
+  width: 100%;
+
+  margin-top: 10px;
+
+  padding: 12px 14px;
+
+  border-radius: 12px;
+
+  border: 0;
+
+  text-align: center;
+  text-decoration: none;
+
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.primary:hover {
+  background: var(--primary-dark);
+}
+
+.secondary {
+  background: var(--soft);
+  color: var(--text);
+}
+
+.secondary:hover {
+  opacity: 0.85;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.status {
+  min-height: 20px;
+
+  margin: 12px 0 0;
+
+  font-size: 13px;
+
+  color: var(--muted);
+}
+
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+.notice {
+  margin: 10px 0;
+  padding: 13px;
+
+  border: 1px solid var(--border);
+  border-radius: 13px;
+
+  background: var(--card);
+}
+
+.notice b {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.notice div {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.notice small {
+  display: block;
+  margin-top: 8px;
+
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* =========================
+   ACCOUNT
+========================= */
+
+#accountLoggedOut input {
+  margin: 7px 0;
+}
+
+#accountLoggedOut .row {
+  display: flex;
+  gap: 9px;
+}
+
+#accountLoggedOut .row button {
+  flex: 1;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 850px) {
+  .topbar {
+    padding: 0 20px;
+  }
+
+  .hero {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar input {
+    width: 100%;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1;
+  }
+
+  .grid {
+    grid-template-columns:
+      repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .topbar {
+    height: 64px;
+    padding: 0 14px;
+  }
+
+  .brand {
+    font-size: 17px;
+  }
+
+  .brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .
