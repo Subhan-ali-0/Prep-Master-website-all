@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#0f172a"
+  >
+
+  <meta
+    name="description"
+    content="Prep Master — Premium Education Apps"
+  >
+
+  <title>Prep Master</title>
+
+  <link
+    rel="icon"
+    href="/assets/logo.png"
+  >
+
+  <link
+    rel="stylesheet"
+    href="/css/app.css"
+  >
+</head>
+
+
+<body>
+
+  <!-- =====================================================
+       SPLASH SCREEN
+       ===================================================== -->
+
+  <div
+    id="splash"
+    class="splash"
+  >
+
+    <div class="splash-content">
+
+      <div class="splash-logo">
+
+        <img
+          src="/assets/logo.png"
+          alt="Prep Master"
+        >
+
+      </div>
+
+      <h1>
+        Prep Master
+      </h1>
+
+      <p>
+        Learn. Prepare. Succeed.
+      </p>
+
+      <div class="splash-loader">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       DRAWER SHADE
+       ===================================================== -->
+
+  <div
+    id="drawerShade"
+    class="drawer-shade"
+  ></div>
+
+
+  <!-- =====================================================
+       SIDE DRAWER
+       ===================================================== -->
+
+  <aside
+    id="drawer"
+    class="drawer"
+  >
+
+    <div class="drawer-header">
+
+      <div class="drawer-brand">
+
+        <img
+          src="/assets/logo.png"
+          alt="Prep Master"
+        >
+
+        <div>
+
+          <strong>
+            Prep Master
+          </strong>
+
+          <span>
+            Education Platform
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <button
+        type="button"
+        class="drawer-close"
+        onclick="closeDrawer()"
+      >
+        ×
+      </button>
+
+    </div>
+
+
+    <div class="drawer-menu">
+
+      <button
+        type="button"
+        class="drawer-item active"
+        onclick="showAppsTab(); closeDrawer();"
+      >
+
+        <span class="drawer-icon">
+          ▦
+        </span>
+
+        <span>
+          Explore Apps
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="drawer-item"
+        onclick="showMyAppsTab(); closeDrawer();"
+      >
+
+        <span class="drawer-icon">
+          ◈
+        </span>
+
+        <span>
+          My Apps
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="drawer-item"
+        onclick="openTelegram(); closeDrawer();"
+      >
+
+        <span class="drawer-icon">
+          ✈
+        </span>
+
+        <span>
+          Telegram Channel
+        </span>
+
+      </button>
+
+    </div>
+
+
+    <div class="drawer-footer">
+
+      <p>
+        Prep Master
+      </p>
+
+      <span>
+        Learn smarter. Prepare better.
+      </span>
+
+    </div>
+
+  </aside>
+
+
+  <!-- =====================================================
+       MAIN PAGE
+       ===================================================== -->
+
+  <div class="app-shell">
+
+
+    <!-- ===================================================
+         TOPBAR
+         =================================================== -->
+
+    <header class="topbar">
+
+      <div class="topbar-left">
+
+        <button
+          type="button"
+          id="menuBtn"
+          class="menu-btn"
+          aria-label="Open menu"
+        >
+          ☰
+        </button>
+
+
+        <a
+          href="/"
+          class="brand"
+        >
+
+          <div class="brand-logo">
+
+            <img
+              src="/assets/logo.png"
+              alt="Prep Master"
+            >
+
+          </div>
+
+          <div class="brand-text">
+
+            <strong>
+              Prep Master
+            </strong>
+
+            <span>
+              Education
+            </span>
+
+          </div>
+
+        </a>
+
+      </div>
+
+
+      <div class="topbar-actions">
+
+        <button
+          type="button"
+          id="notificationBtn"
+          class="icon-button notification-button"
+          aria-label="Notifications"
+        >
+
+          <span>
+            🔔
+          </span>
+
+          <span
+            class="notification-count"
+            style="display:none;"
+          >
+            0
+          </span>
+
+        </button>
+
+
+        <button
+          type="button"
+          id="themeToggle"
+          class="icon-button theme-toggle"
+          aria-label="Toggle theme"
+        >
+          🌙
+        </button>
+
+
+        <button
+          type="button"
+          id="accountBtn"
+          class="account-button"
+        >
+
+          <span class="account-icon">
+            👤
+          </span>
+
+          <span class="account-text">
+            Account
+          </span>
+
+        </button>
+
+      </div>
+
+    </header>
+
+
+    <!-- ===================================================
+         HERO
+         =================================================== -->
+
+    <main>
+
+      <section class="hero">
+
+        <div class="hero-content">
+
+          <span class="hero-badge">
+            PREP MASTER
+          </span>
+
+
+          <h1>
+            Your Learning,
+            <span>
+              Your Way.
+            </span>
+          </h1>
+
+
+          <p>
+            Explore premium education apps
+            and unlock your learning experience
+            with Prep Master.
+          </p>
+
+
+          <div class="hero-actions">
+
+            <button
+              type="button"
+              class="hero-btn"
+              onclick="showAppsTab()"
+            >
+              Explore Apps
+              <span>→</span>
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="hero-visual">
+
+          <div class="hero-glow"></div>
+
+          <div class="hero-card">
+
+            <div class="hero-card-top">
+
+              <span>
+                PREP MASTER
+              </span>
+
+              <span>
+                ✦
+              </span>
+
+            </div>
+
+
+            <div class="hero-card-logo">
+
+              <img
+                src="/assets/logo.png"
+                alt="Prep Master"
+              >
+
+            </div>
+
+
+            <div class="hero-card-bottom">
+
+              <strong>
+                Learn Better
+              </strong>
+
+              <span>
+                Premium Education Apps
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================
+           APP AREA
+           ================================================= -->
+
+      <section
+        id="appsSection"
+        class="apps-section"
+      >
+
+        <div class="section-heading">
+
+          <div>
+
+            <span class="section-label">
+              APPLICATIONS
+            </span>
+
+            <h2>
+              Explore Apps
+            </h2>
+
+            <p>
+              Available educational apps
+              at one place.
+            </p>
+
+          </div>
+
+
+          <span class="app-count-badge">
+
+            <span class="app-count">
+              0
+            </span>
+
+            Apps
+
+          </span>
+
+        </div>
+
+
+        <!-- Search -->
+
+        <div class="search-area">
+
+          <div class="search-box">
+
+            <span class="search-icon">
+              🔍
+            </span>
+
+            <input
+              type="search"
+              id="searchInput"
+              placeholder="Search apps..."
+              autocomplete="off"
+            >
+
+            <button
+              type="button"
+              class="search-clear"
+              onclick="
+                document.getElementById('searchInput').value='';
+                searchApps('');
+              "
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- Tabs -->
+
+        <div class="app-tabs">
+
+          <button
+            type="button"
+            class="app-tab active"
+            data-tab="apps"
+          >
+            Apps
+          </button>
+
+
+          <button
+            type="button"
+            class="app-tab"
+            data-tab="myapps"
+          >
+            My Apps
+          </button>
+
+        </div>
+
+
+        <!-- Apps Grid -->
+
+        <div
+          id="appsGrid"
+          class="apps-grid"
+        >
+
+          <div class="loading-state">
+
+            <div class="loading-spinner"></div>
+
+            <p>
+              Loading apps...
+            </p>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- ===================================================
+         FOOTER
+         =================================================== -->
+
+    <footer class="footer">
+
+      <div class="footer-inner">
+
+        <div class="footer-brand">
+
+          <div class="footer-logo">
+
+            <img
+              src="/assets/logo.png"
+              alt="Prep Master"
+            >
+
+          </div>
+
+
+          <div>
+
+            <strong>
+              Prep Master
+            </strong>
+
+            <p>
+              Your learning, your way.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div class="footer-links">
+
+          <button
+            type="button"
+            onclick="openTelegram()"
+          >
+            Telegram
+          </button>
+
+          <button
+            type="button"
+            onclick="showAppsTab();"
+          >
+            Apps
+          </button>
+
+          <button
+            type="button"
+            onclick="showMyAppsTab();"
+          >
+            My Apps
+          </button>
+
+        </div>
+
+
+        <div class="footer-bottom">
+
+          <span>
+            © 2026 Prep Master
+          </span>
+
+          <span>
+            All rights reserved.
+          </span>
+
+        </div>
+
+      </div>
+
+    </footer>
+
+  </div>
+
+
+  <!-- =====================================================
+       APP DETAILS MODAL
+       ===================================================== -->
+
+  <div
+    id="appModal"
+    class="modal"
+    style="display:none;"
+  >
+
+    <div class="modal-card app-modal-card">
+
+
+      <button
+        type="button"
+        id="closeAppModal"
+        class="modal-close"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+
+      <div
+        id="modalAppLogo"
+        class="modal-app-logo"
+      >
+        <span>
+          PM
+        </span>
+      </div>
+
+
+      <div class="modal-app-content">
+
+        <span class="modal-label">
+          PREMIUM APP
+        </span>
+
+
+        <h2 id="modalAppTitle">
+          App
+        </h2>
+
+
+        <p id="modalAppDescription">
+          App description
+        </p>
+
+
+        <!-- =============================================
+             VERIFY KEY
+             ============================================= -->
+
+        <form
+          id="appKeyForm"
+          class="key-form"
+        >
+
+          <label for="appKey">
+            Enter App Key
+          </label>
+
+
+          <div class="key-input-wrap">
+
+            <span>
+              🔑
+            </span>
+
+            <input
+              type="text"
+              id="appKey"
+              placeholder="Enter your app key"
+              autocomplete="off"
+              required
+            >
+
+          </div>
+
+
+          <button
+            type="submit"
+            id="verifyKeyBtn"
+            class="primary-btn verify-btn"
+          >
+            Verify App Key
+          </button>
+
+        </form>
+
+
+        <div class="purchase-help">
+
+          <div class="purchase-help-line"></div>
+
+          <span>
+            Need Premium Access?
+          </span>
+
+          <div class="purchase-help-line"></div>
+
+        </div>
+
+
+        <button
+          type="button"
+          id="purchaseVideoBtn"
+          class="purchase-video-btn"
+        >
+          ▶ How to Purchase Premium?
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       NOTIFICATION MODAL
+       ===================================================== -->
+
+  <div
+    id="notificationModal"
+    class="modal"
+    style="display:none;"
+  >
+
+    <div class="modal-card notification-modal-card">
+
+      <div class="modal-header">
+
+        <div>
+
+          <span class="modal-label">
+            UPDATES
+          </span>
+
+          <h2>
+            Notifications
+          </h2>
+
+        </div>
+
+
+        <button
+          type="button"
+          id="closeNotificationModal"
+          class="modal-close"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div
+        id="notificationsList"
+        class="notifications-list"
+      >
+
+        <div class="empty-state small">
+
+          <p>
+            Loading notifications...
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       ACCOUNT MODAL
+       ===================================================== -->
+
+  <div
+    id="accountModal"
+    class="modal"
+    style="display:none;"
+  >
+
+    <div class="modal-card account-modal-card">
+
+
+      <button
+        type="button"
+        id="closeAccountModal"
+        class="modal-close"
+      >
+        ×
+      </button>
+
+
+      <!-- Login -->
+
+      <div
+        id="loginBox"
+        class="account-box"
+      >
+
+        <div class="account-heading">
+
+          <div class="account-big-icon">
+            👤
+          </div>
+
+          <span class="modal-label">
+            WELCOME BACK
+          </span>
+
+          <h2>
+            Login
+          </h2>
+
+          <p>
+            Apne account me login karo.
+          </p>
+
+        </div>
+
+
+        <form
+          id="loginForm"
+          class="account-form"
+        >
+
+          <div class="form-group">
+
+            <label for="loginUsername">
+              Username
+            </label>
+
+            <input
+              type="text"
+              id="loginUsername"
+              placeholder="Enter username"
+              autocomplete="username"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="loginPassword">
+              Password
+            </label>
+
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="Enter password"
+              autocomplete="current-password"
+              required
+            >
+
+          </div>
+
+
+          <button
+            type="submit"
+            class="primary-btn"
+          >
+            Login
+          </button>
+
+        </form>
+
+      </div>
+
+
+      <!-- Register -->
+
+      <div
+        id="registerBox"
+        class="account-box"
+      >
+
+        <div class="account-divider">
+          <span>
+            OR
+          </span>
+        </div>
+
+
+        <form
+          id="registerForm"
+          class="account-form"
+        >
+
+          <h3>
+            Create Account
+          </h3>
+
+          <p>
+            New account bana kar apne apps ko sync rakho.
+          </p>
+
+
+          <div class="form-group">
+
+            <label for="registerUsername">
+              Username
+            </label>
+
+            <input
+              type="text"
+              id="registerUsername"
+              placeholder="Choose username"
+              autocomplete="username"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="registerPassword">
+              Password
+            </label>
+
+            <input
+              type="password"
+              id="registerPassword"
+              placeholder="Choose password"
+              autocomplete="new-password"
+              required
+            >
+
+          </div>
+
+
+          <button
+            type="submit"
+            class="secondary-btn full-btn"
+          >
+            Create Account
+          </button>
+
+        </form>
+
+      </div>
+
+
+      <!-- Logged In -->
+
+      <div
+        id="loggedInBox"
+        class="account-box logged-in-box"
+        style="display:none;"
+      >
+
+        <div class="account-heading">
+
+          <div class="account-big-icon">
+            ✓
+          </div>
+
+          <span class="modal-label">
+            ACCOUNT
+          </span>
+
+          <h2>
+            Welcome
+          </h2>
+
+          <p>
+            You are logged in as
+          </p>
+
+          <strong
+            id="accountUsername"
+            class="account-username"
+          >
+          </strong>
+
+        </div>
+
+
+        <button
+          type="button"
+          id="logoutBtn"
+          class="danger-btn full-btn"
+        >
+          Logout
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       TOAST
+       ===================================================== -->
+
+  <div
+    id="toast"
+    class="toast"
+  ></div>
+
+
+  <!-- =====================================================
+       JAVASCRIPT
+       ===================================================== -->
+
+  <script src="/js/app.js"></script>
+
+</body>
+
+</html>
