@@ -1,127 +1,254 @@
+'use strict';
+
 /* =========================================================
-   PREP MASTER — USER APP JS
+   PREP MASTER - USER APP JS
    ========================================================= */
 
-const API = "/api";
+const API = '/api';
 
-let apps = [];
-let notifications = [];
-let currentApp = null;
-let currentUser = null;
+const STORAGE = {
+  TOKEN: 'pm_token',
+  USER: 'pm_user',
+  UNLOCKED: 'pm_unlocked',
+  CLIENT_ID: 'pm_client_id',
+  THEME: 'pm_theme'
+};
 
-let token = localStorage.getItem("pm_token") || "";
-let unlockedApps = JSON.parse(
-  localStorage.getItem("pm_unlocked") || "[]"
-);
-
-let clientId =
-  localStorage.getItem("pm_client_id");
-
-if (!clientId) {
-  clientId =
-    crypto.randomUUID?.() ||
-    "guest-" +
-      Date.now() +
-      "-" +
-      Math.random()
-        .toString(36)
-        .slice(2);
-
-  localStorage.setItem(
-    "pm_client_id",
-    clientId
-  );
-}
+const TELEGRAM_URL = 'https://t.me/prepmaster0';
 
 /* =========================================================
    HELPERS
    ========================================================= */
 
-const $ = (selector) =>
-  document.querySelector(selector);
+const $ = (selector, parent = document) =>
+  parent.querySelector(selector);
 
-const $$ = (selector) =>
-  document.querySelectorAll(selector);
+const $$ = (selector, parent = document) =>
+  [...parent.querySelectorAll(selector)];
 
-function escapeHTML(value = "") {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function byId(id) {
+  return document.getElementById(id);
 }
 
-function saveUnlockedApps() {
-  localStorage.setItem(
-    "pm_unlocked",
-    JSON.stringify(unlockedApps)
+function safeJSON(value, fallback = null) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function escapeHTML(value) {
+  if (value === null || value === undefined) return '';
+
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function getErrorMessage(error, fallback = 'Something went wrong') {
+  if (!error) return fallback;
+
+  if (typeof error === 'string') return error;
+
+  return (
+    error.message ||
+    error.error ||
+    error.details ||
+    fallback
   );
 }
 
-function isUnlocked(appId) {
-  return unlockedApps.includes(appId);
+/* =========================================================
+   GLOBAL STATE
+   ========================================================= */
+
+let apps = [];
+let notifications = [];
+let currentApp = null;
+let currentUser = null;
+let currentTab = 'apps';
+let searchTerm = '';
+let isLoadingApps = false;
+
+/* =========================================================
+   CLIENT ID
+   ========================================================= */
+
+function generateClientId() {
+  return (
+    'client_' +
+    Date.now().toString(36) +
+    '_' +
+    Math.random().toString(36).substring(2, 12)
+  );
 }
 
-function showToast(message, type = "success") {
-  let toast = $("#toast");
+function getClientId() {
+  let clientId = localStorage.getItem(STORAGE.CLIENT_ID);
 
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "toast";
-    toast.className = "toast";
-    document.body.appendChild(toast);
+  if (!clientId) {
+    clientId = generateClientId();
+    localStorage.setItem(STORAGE.CLIENT_ID, clientId);
   }
 
-  toast.textContent = message;
-  toast.className = `toast ${type} show`;
-
-  clearTimeout(window.toastTimer);
-
-  window.toastTimer = setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3000);
+  return clientId;
 }
 
-function apiHeaders() {
+/* =========================================================
+   AUTH STORAGE
+   ========================================================= */
+
+function getToken() {
+  return localStorage.getItem(STORAGE.TOKEN);
+}
+
+function getSavedUser() {
+  const raw = localStorage.getItem(STORAGE.USER);
+
+  if (!raw) return null;
+
+  return safeJSON(raw, null);
+}
+
+function saveLogin(token, user) {
+  if (token) {
+    localStorage.setItem(STORAGE.TOKEN, token);
+  }
+
+  if (user) {
+    localStorage.setItem(STORAGE.USER, JSON.stringify(user));
+  }
+
+  currentUser = user || null;
+
+  updateAccountUI();
+}
+
+function clearLogin() {
+  localStorage.removeItem(STORAGE.TOKEN);
+  localStorage.removeItem(STORAGE.USER);
+
+  currentUser = null;
+
+  updateAccountUI();
+}
+
+/* =========================================================
+   UNLOCK STORAGE
+   ========================================================= */
+
+function getUnlockedApps() {
+  const raw = localStorage.getItem(STORAGE.UNLOCKED);
+
+  if (!raw) return [];
+
+  const data = safeJSON(raw, []);
+
+  return Array.isArray(data) ? data : [];
+}
+
+function saveUnlockedApps(list) {
+  const clean = [...new Set(
+    list
+      .filter(Boolean)
+      .map(String)
+  )];
+
+  localStorage.setItem(
+    STORAGE.UNLOCKED,
+    JSON.stringify(clean)
+  );
+}
+
+function isAppUnlocked(appId) {
+  if (!appId) return false;
+
+  const unlocked = getUnlockedApps();
+
+  return unlocked.includes(String(appId));
+}
+
+function markAppUnlocked(appId) {
+  if (!appId) return;
+
+  const unlocked = getUnlockedApps();
+
+  if (!unlocked.includes(String(appId))) {
+    unlocked.push(String(appId));
+    saveUnlockedApps(unlocked);
+  }
+}
+
+/* =========================================================
+   API
+   ========================================================= */
+
+function apiHeaders(extra = {}) {
   const headers = {
-    "Content-Type": "application/json",
-    "X-Client-Id": clientId
+    'Content-Type': 'application/json',
+    'X-Client-Id': getClientId(),
+    ...extra
   };
 
+  const token = getToken();
+
   if (token) {
-    headers.Authorization =
-      `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;
 }
 
-async function api(path, options = {}) {
-  const response = await fetch(
-    `${API}${path}`,
-    {
-      ...options,
-      headers: {
-        ...apiHeaders(),
-        ...(options.headers || {})
-      }
+async function apiFetch(endpoint, options = {}) {
+  const config = {
+    method: options.method || 'GET',
+    headers: {
+      ...apiHeaders(),
+      ...(options.headers || {})
     }
+  };
+
+  if (
+    options.body !== undefined &&
+    options.body !== null
+  ) {
+    config.body =
+      typeof options.body === 'string'
+        ? options.body
+        : JSON.stringify(options.body);
+  }
+
+  const response = await fetch(
+    `${API}${endpoint}`,
+    config
   );
 
-  let data = {};
+  let data = null;
 
   try {
     data = await response.json();
   } catch {
-    data = {};
+    data = null;
   }
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      endpoint !== '/auth/login' &&
+      endpoint !== '/auth/register'
+    ) {
+      clearLogin();
+    }
+
     throw new Error(
-      data.error ||
-      data.message ||
-      "Request failed"
+      getErrorMessage(
+        data,
+        `Request failed (${response.status})`
+      )
     );
   }
 
@@ -129,134 +256,955 @@ async function api(path, options = {}) {
 }
 
 /* =========================================================
-   SPLASH SCREEN
+   TOAST
    ========================================================= */
 
-function hideSplash() {
-  const splash = $("#splash");
+function showToast(message, type = 'info') {
+  let toast = byId('toast');
 
-  if (!splash) return;
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    document.body.appendChild(toast);
+  }
 
-  setTimeout(() => {
-    splash.classList.add("hide");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
 
-    setTimeout(() => {
-      splash.style.display = "none";
-    }, 500);
-  }, 900);
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  clearTimeout(window.__pmToastTimer);
+
+  window.__pmToastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
 }
 
 /* =========================================================
-   LOAD APPS
+   THEME
    ========================================================= */
 
-async function loadApps() {
-  try {
-    const data = await api("/apps");
+function getSavedTheme() {
+  return localStorage.getItem(STORAGE.THEME) || 'light';
+}
 
-    apps = Array.isArray(data)
-      ? data
-      : data.apps || [];
+function applyTheme(theme) {
+  const finalTheme =
+    theme === 'dark' ? 'dark' : 'light';
 
-    renderApps();
-    updateAppCount();
-  } catch (error) {
-    console.error(error);
+  document.documentElement.setAttribute(
+    'data-theme',
+    finalTheme
+  );
 
-    showToast(
-      "Apps load nahi ho paayi.",
-      "error"
+  document.body.classList.toggle(
+    'dark',
+    finalTheme === 'dark'
+  );
+
+  localStorage.setItem(
+    STORAGE.THEME,
+    finalTheme
+  );
+
+  updateThemeButtons(finalTheme);
+}
+
+function updateThemeButtons(theme) {
+  const buttons = [
+    byId('themeBtn'),
+    byId('themeToggle'),
+    byId('drawerThemeBtn')
+  ].filter(Boolean);
+
+  buttons.forEach(button => {
+    button.setAttribute(
+      'aria-label',
+      theme === 'dark'
+        ? 'Switch to light mode'
+        : 'Switch to dark mode'
     );
+
+    const icon =
+      button.querySelector('.theme-icon') ||
+      button.querySelector('i');
+
+    if (icon) {
+      icon.textContent =
+        theme === 'dark' ? '☀' : '☾';
+    }
+  });
+}
+
+function toggleTheme() {
+  const current =
+    document.documentElement.getAttribute('data-theme') ||
+    'light';
+
+  applyTheme(
+    current === 'dark' ? 'light' : 'dark'
+  );
+}
+
+/* =========================================================
+   DRAWER
+   ========================================================= */
+
+function openDrawer() {
+  const drawer =
+    byId('drawer') ||
+    $('.drawer');
+
+  const overlay =
+    byId('drawerOverlay') ||
+    $('.drawer-overlay');
+
+  if (drawer) {
+    drawer.classList.add('open');
+    drawer.classList.add('active');
+  }
+
+  if (overlay) {
+    overlay.classList.add('open');
+    overlay.classList.add('active');
+  }
+
+  document.body.classList.add('drawer-open');
+}
+
+function closeDrawer() {
+  const drawer =
+    byId('drawer') ||
+    $('.drawer');
+
+  const overlay =
+    byId('drawerOverlay') ||
+    $('.drawer-overlay');
+
+  if (drawer) {
+    drawer.classList.remove('open');
+    drawer.classList.remove('active');
+  }
+
+  if (overlay) {
+    overlay.classList.remove('open');
+    overlay.classList.remove('active');
+  }
+
+  document.body.classList.remove('drawer-open');
+}
+
+/* =========================================================
+   MODAL HELPERS
+   ========================================================= */
+
+function openModal(modal) {
+  if (!modal) return;
+
+  modal.classList.add('open');
+  modal.classList.add('active');
+
+  modal.removeAttribute('hidden');
+
+  document.body.classList.add('modal-open');
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+
+  modal.classList.remove('open');
+  modal.classList.remove('active');
+
+  modal.setAttribute('hidden', '');
+
+  document.body.classList.remove('modal-open');
+}
+
+function closeAllModals() {
+  $$('.modal, .popup, .dialog').forEach(modal => {
+    modal.classList.remove('open');
+    modal.classList.remove('active');
+  });
+
+  document.body.classList.remove('modal-open');
+}
+
+/* =========================================================
+   ACCOUNT
+   ========================================================= */
+
+function getAccountModal() {
+  return (
+    byId('accountModal') ||
+    byId('accountPopup') ||
+    $('.account-modal')
+  );
+}
+
+function updateAccountUI() {
+  const accountBtn =
+    byId('accountBtn') ||
+    byId('accountButton');
+
+  const accountName =
+    byId('accountName') ||
+    byId('loggedUsername');
+
+  const loggedInArea =
+    byId('loggedInArea');
+
+  const loginArea =
+    byId('loginArea');
+
+  if (currentUser) {
+    if (accountName) {
+      accountName.textContent =
+        currentUser.username ||
+        currentUser.name ||
+        currentUser.email ||
+        'Account';
+    }
+
+    if (loggedInArea) {
+      loggedInArea.style.display = '';
+    }
+
+    if (loginArea) {
+      loginArea.style.display = 'none';
+    }
+
+    if (accountBtn) {
+      accountBtn.setAttribute(
+        'title',
+        currentUser.username ||
+        currentUser.name ||
+        'Account'
+      );
+    }
+  } else {
+    if (accountName) {
+      accountName.textContent = 'Account';
+    }
+
+    if (loggedInArea) {
+      loggedInArea.style.display = 'none';
+    }
+
+    if (loginArea) {
+      loginArea.style.display = '';
+    }
+
+    if (accountBtn) {
+      accountBtn.setAttribute(
+        'title',
+        'Login'
+      );
+    }
+  }
+}
+
+function openAccountModal() {
+  const modal = getAccountModal();
+
+  if (!modal) {
+    showToast(
+      'Account section not found. Check index.html',
+      'error'
+    );
+    return;
+  }
+
+  updateAccountUI();
+
+  openModal(modal);
+}
+
+function closeAccountModal() {
+  closeModal(getAccountModal());
+}
+
+function showLoginForm() {
+  const loginArea =
+    byId('loginArea');
+
+  const registerArea =
+    byId('registerArea');
+
+  const loggedInArea =
+    byId('loggedInArea');
+
+  if (loginArea) {
+    loginArea.style.display = '';
+  }
+
+  if (registerArea) {
+    registerArea.style.display = 'none';
+  }
+
+  if (loggedInArea) {
+    loggedInArea.style.display = 'none';
+  }
+}
+
+function showRegisterForm() {
+  const loginArea =
+    byId('loginArea');
+
+  const registerArea =
+    byId('registerArea');
+
+  const loggedInArea =
+    byId('loggedInArea');
+
+  if (loginArea) {
+    loginArea.style.display = 'none';
+  }
+
+  if (registerArea) {
+    registerArea.style.display = '';
+  }
+
+  if (loggedInArea) {
+    loggedInArea.style.display = 'none';
   }
 }
 
 /* =========================================================
-   APP CARD
+   LOGIN
    ========================================================= */
 
-function createAppCard(app) {
-  const unlocked = isUnlocked(app.id);
+async function loginUser() {
+  const usernameInput =
+    byId('loginUsername') ||
+    byId('username');
 
-  const logo = app.logo_url
-    ? `
-      <img
-        src="${escapeHTML(app.logo_url)}"
-        alt="${escapeHTML(app.name)}"
-        class="app-card-logo"
-      >
-    `
-    : `
-      <div class="app-card-logo placeholder">
-        PM
-      </div>
-    `;
+  const passwordInput =
+    byId('loginPassword') ||
+    byId('password');
+
+  const username =
+    usernameInput?.value.trim();
+
+  const password =
+    passwordInput?.value || '';
+
+  if (!username || !password) {
+    showToast(
+      'Username aur password dono bharo',
+      'error'
+    );
+    return;
+  }
+
+  const button =
+    byId('loginBtn');
+
+  const originalText =
+    button?.textContent;
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Logging in...';
+  }
+
+  try {
+    const data = await apiFetch(
+      '/auth/login',
+      {
+        method: 'POST',
+        body: {
+          username,
+          password
+        }
+      }
+    );
+
+    if (!data?.token) {
+      throw new Error(
+        'Login token nahi mila'
+      );
+    }
+
+    saveLogin(
+      data.token,
+      data.user || {
+        username
+      }
+    );
+
+    showToast(
+      'Login successful!',
+      'success'
+    );
+
+    updateAccountUI();
+
+    await loadMe();
+
+    setTimeout(() => {
+      closeAccountModal();
+    }, 500);
+
+  } catch (error) {
+    console.error(
+      'Login error:',
+      error
+    );
+
+    showToast(
+      getErrorMessage(
+        error,
+        'Login failed'
+      ),
+      'error'
+    );
+
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent =
+        originalText || 'Login';
+    }
+  }
+}
+
+/* =========================================================
+   REGISTER
+   ========================================================= */
+
+async function registerUser() {
+  const usernameInput =
+    byId('registerUsername') ||
+    byId('regUsername');
+
+  const passwordInput =
+    byId('registerPassword') ||
+    byId('regPassword');
+
+  const username =
+    usernameInput?.value.trim();
+
+  const password =
+    passwordInput?.value || '';
+
+  if (!username || !password) {
+    showToast(
+      'Username aur password dono bharo',
+      'error'
+    );
+    return;
+  }
+
+  if (username.length < 3) {
+    showToast(
+      'Username kam se kam 3 characters ka hona chahiye',
+      'error'
+    );
+    return;
+  }
+
+  if (password.length < 4) {
+    showToast(
+      'Password kam se kam 4 characters ka hona chahiye',
+      'error'
+    );
+    return;
+  }
+
+  const button =
+    byId('registerBtn');
+
+  const originalText =
+    button?.textContent;
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Creating...';
+  }
+
+  try {
+    const data = await apiFetch(
+      '/auth/register',
+      {
+        method: 'POST',
+        body: {
+          username,
+          password
+        }
+      }
+    );
+
+    /*
+      Kuch backend versions registration ke baad
+      direct token dete hain.
+    */
+
+    if (data?.token) {
+      saveLogin(
+        data.token,
+        data.user || {
+          username
+        }
+      );
+
+      showToast(
+        'Account created successfully!',
+        'success'
+      );
+
+      await loadMe();
+
+      setTimeout(() => {
+        closeAccountModal();
+      }, 500);
+
+    } else {
+      /*
+        Agar backend sirf account create karta hai,
+        to automatically login try karenge.
+      */
+
+      showToast(
+        'Account created! Logging in...',
+        'success'
+      );
+
+      const loginData =
+        await apiFetch(
+          '/auth/login',
+          {
+            method: 'POST',
+            body: {
+              username,
+              password
+            }
+          }
+        );
+
+      if (!loginData?.token) {
+        throw new Error(
+          'Account bana hai, lekin automatic login nahi ho saka'
+        );
+      }
+
+      saveLogin(
+        loginData.token,
+        loginData.user || {
+          username
+        }
+      );
+
+      await loadMe();
+
+      setTimeout(() => {
+        closeAccountModal();
+      }, 500);
+    }
+
+  } catch (error) {
+    console.error(
+      'Register error:',
+      error
+    );
+
+    showToast(
+      getErrorMessage(
+        error,
+        'Registration failed'
+      ),
+      'error'
+    );
+
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent =
+        originalText || 'Create Account';
+    }
+  }
+}
+
+/* =========================================================
+   LOAD CURRENT USER
+   ========================================================= */
+
+async function loadMe() {
+  const token = getToken();
+
+  if (!token) {
+    currentUser = null;
+    updateAccountUI();
+    return null;
+  }
+
+  try {
+    const data =
+      await apiFetch('/me');
+
+    const user =
+      data?.user ||
+      data?.data ||
+      data;
+
+    if (!user) {
+      throw new Error(
+        'User data not found'
+      );
+    }
+
+    currentUser = user;
+
+    localStorage.setItem(
+      STORAGE.USER,
+      JSON.stringify(user)
+    );
+
+    updateAccountUI();
+
+    /*
+      Server se unlocked apps mile to
+      local unlocked list ke saath merge.
+    */
+
+    const serverUnlocked =
+      user.unlocked_apps ||
+      user.unlockedApps ||
+      [];
+
+    if (Array.isArray(serverUnlocked)) {
+      const localUnlocked =
+        getUnlockedApps();
+
+      saveUnlockedApps([
+        ...localUnlocked,
+        ...serverUnlocked
+      ]);
+    }
+
+    renderApps();
+
+    return user;
+
+  } catch (error) {
+    console.warn(
+      'Could not restore login:',
+      error
+    );
+
+    clearLogin();
+
+    return null;
+  }
+}
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logoutUser() {
+  try {
+    /*
+      Current backend custom JWT hai,
+      isliye local token clear karna enough hai.
+    */
+
+    clearLogin();
+
+    showToast(
+      'Logged out successfully',
+      'success'
+    );
+
+    closeAccountModal();
+
+    renderApps();
+
+  } catch (error) {
+    console.error(
+      'Logout error:',
+      error
+    );
+
+    clearLogin();
+  }
+}
+
+/* =========================================================
+   APPS
+   ========================================================= */
+
+async function loadApps() {
+  if (isLoadingApps) return;
+
+  isLoadingApps = true;
+
+  renderLoadingApps();
+
+  try {
+    let data;
+
+    try {
+      data =
+        await apiFetch('/apps');
+    } catch (error) {
+      /*
+        Agar public endpoint /apps fail ho,
+        to /apps/all try nahi karna unless needed.
+      */
+      throw error;
+    }
+
+    const result =
+      data?.apps ||
+      data?.data ||
+      data;
+
+    apps =
+      Array.isArray(result)
+        ? result
+        : [];
+
+    /*
+      Sirf active apps user ko dikhaye jayenge.
+    */
+
+    apps = apps.filter(app => {
+      if (
+        app.active === false ||
+        app.is_active === false
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    renderApps();
+
+  } catch (error) {
+    console.error(
+      'Apps loading error:',
+      error
+    );
+
+    apps = [];
+
+    renderEmptyApps(
+      'Apps load nahi ho pa rahe. Backend/API check karo.'
+    );
+
+  } finally {
+    isLoadingApps = false;
+  }
+}
+
+function renderLoadingApps() {
+  const grid =
+    byId('appGrid') ||
+    byId('appsGrid') ||
+    $('.app-grid');
+
+  if (!grid) return;
+
+  grid.innerHTML = `
+    <div class="loading-state">
+      <div class="loader"></div>
+      <p>Loading apps...</p>
+    </div>
+  `;
+}
+
+function getAppId(app) {
+  return String(
+    app.id ||
+    app._id ||
+    app.app_id ||
+    ''
+  );
+}
+
+function getAppName(app) {
+  return (
+    app.name ||
+    app.title ||
+    'Untitled App'
+  );
+}
+
+function getAppLogo(app) {
+  return (
+    app.logoUrl ||
+    app.logo_url ||
+    app.logo ||
+    '/assets/logo.png'
+  );
+}
+
+function getAppDescription(app) {
+  return (
+    app.description ||
+    'Premium learning application'
+  );
+}
+
+function getAppCategory(app) {
+  return (
+    app.category ||
+    'Education'
+  );
+}
+
+function renderApps() {
+  const grid =
+    byId('appGrid') ||
+    byId('appsGrid') ||
+    $('.app-grid');
+
+  if (!grid) return;
+
+  let visibleApps = [...apps];
+
+  /*
+    Search
+  */
+
+  if (searchTerm) {
+    const term =
+      searchTerm.toLowerCase();
+
+    visibleApps =
+      visibleApps.filter(app => {
+        const text = [
+          getAppName(app),
+          getAppDescription(app),
+          getAppCategory(app)
+        ]
+          .join(' ')
+          .toLowerCase();
+
+        return text.includes(term);
+      });
+  }
+
+  /*
+    My Apps
+  */
+
+  if (currentTab === 'myapps') {
+    visibleApps =
+      visibleApps.filter(app =>
+        isAppUnlocked(getAppId(app))
+      );
+  }
+
+  if (!visibleApps.length) {
+    if (currentTab === 'myapps') {
+      renderEmptyApps(
+        searchTerm
+          ? 'Matching unlocked app nahi mila.'
+          : 'Abhi koi unlocked app nahi hai.'
+      );
+    } else {
+      renderEmptyApps(
+        searchTerm
+          ? 'Koi matching app nahi mila.'
+          : 'Abhi koi app available nahi hai.'
+      );
+    }
+
+    updateAppCount(0);
+    return;
+  }
+
+  grid.innerHTML =
+    visibleApps
+      .map(renderAppCard)
+      .join('');
+
+  updateAppCount(
+    visibleApps.length
+  );
+}
+
+function renderAppCard(app) {
+  const id =
+    getAppId(app);
+
+  const name =
+    getAppName(app);
+
+  const logo =
+    getAppLogo(app);
+
+  const description =
+    getAppDescription(app);
+
+  const category =
+    getAppCategory(app);
+
+  const unlocked =
+    isAppUnlocked(id);
 
   return `
     <article
-      class="app-card ${
-        unlocked ? "unlocked" : ""
-      }"
-      data-app-id="${escapeHTML(app.id)}"
+      class="app-card"
+      data-app-id="${escapeHTML(id)}"
+      tabindex="0"
+      role="button"
     >
 
-      <div class="app-card-image">
-        ${logo}
-
-        ${
-          unlocked
-            ? `
-              <span class="app-status unlocked">
-                Unlocked
-              </span>
-            `
-            : `
-              <span class="app-status locked">
-                Premium
-              </span>
-            `
-        }
+      <div class="app-card-logo">
+        <img
+          src="${escapeHTML(logo)}"
+          alt="${escapeHTML(name)}"
+          loading="lazy"
+          onerror="this.onerror=null;this.src='/assets/logo.png';"
+        >
       </div>
 
-      <div class="app-card-body">
+      <div class="app-card-content">
 
-        <div class="app-card-title-row">
+        <div class="app-card-top">
+          <span class="app-category">
+            ${escapeHTML(category)}
+          </span>
 
-          <h3>
-            ${escapeHTML(app.name)}
-          </h3>
-
-        </div>
-
-        ${
-          app.category
-            ? `
-              <span class="app-category">
-                ${escapeHTML(app.category)}
-              </span>
-            `
-            : ""
-        }
-
-        <p>
-          ${escapeHTML(
-            app.description ||
-              "Premium educational app"
-          )}
-        </p>
-
-        <button
-          class="app-open-btn"
-          type="button"
-          onclick="handleAppClick('${escapeHTML(
-            app.id
-          )}')"
-        >
           ${
             unlocked
-              ? "Open App"
-              : "View App"
+              ? `
+                <span class="app-unlocked">
+                  Unlocked
+                </span>
+              `
+              : ''
           }
-        </button>
+        </div>
+
+        <h3 class="app-card-title">
+          ${escapeHTML(name)}
+        </h3>
+
+        <p class="app-card-description">
+          ${escapeHTML(description)}
+        </p>
+
+        <div class="app-card-bottom">
+
+          <span class="app-open-label">
+            ${
+              unlocked
+                ? 'Open App'
+                : 'View App'
+            }
+          </span>
+
+          <span class="app-arrow">
+            →
+          </span>
+
+        </div>
 
       </div>
 
@@ -264,306 +1212,579 @@ function createAppCard(app) {
   `;
 }
 
-/* =========================================================
-   RENDER APPS
-   ========================================================= */
+function renderEmptyApps(message) {
+  const grid =
+    byId('appGrid') ||
+    byId('appsGrid') ||
+    $('.app-grid');
 
-function renderApps(list = apps) {
-  const container =
-    $("#appsGrid") ||
-    $("#appGrid") ||
-    $("#appsList");
+  if (!grid) return;
 
-  if (!container) return;
+  grid.innerHTML = `
+    <div class="empty-state">
 
-  if (!list.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📱</div>
-        <h3>No apps available</h3>
-        <p>
-          Abhi koi app available nahi hai.
-        </p>
+      <div class="empty-icon">
+        📚
       </div>
-    `;
 
-    return;
-  }
+      <h3>
+        No Apps
+      </h3>
 
-  container.innerHTML = list
-    .map(createAppCard)
-    .join("");
+      <p>
+        ${escapeHTML(message)}
+      </p>
+
+    </div>
+  `;
+}
+
+function updateAppCount(count) {
+  const elements = [
+    byId('appCount'),
+    byId('appsCount')
+  ].filter(Boolean);
+
+  elements.forEach(element => {
+    element.textContent =
+      String(count);
+  });
 }
 
 /* =========================================================
-   HANDLE APP CLICK
-   ========================================================= */
-
-function handleAppClick(appId) {
-  const app = apps.find(
-    (item) => item.id === appId
-  );
-
-  if (!app) {
-    showToast(
-      "App nahi mili.",
-      "error"
-    );
-    return;
-  }
-
-  if (isUnlocked(app.id)) {
-    openAppUrl(app);
-    return;
-  }
-
-  openAppDetails(app);
-}
-
-/* =========================================================
-   OPEN APP URL
-   ========================================================= */
-
-function openAppUrl(app) {
-  if (!app.home_url) {
-    showToast(
-      "Is app ka URL admin ne set nahi kiya.",
-      "error"
-    );
-    return;
-  }
-
-  /*
-   * Admin ke saved URL ki home screen open hogi.
-   */
-  window.location.href = app.home_url;
-}
-
-/* =========================================================
-   APP DETAILS MODAL
+   APP DETAIL
    ========================================================= */
 
 function openAppDetails(app) {
+  if (!app) return;
+
   currentApp = app;
 
   const modal =
-    $("#appModal") ||
-    $("#appDetailsModal");
+    byId('appModal') ||
+    byId('appDetailsModal') ||
+    $('.app-modal');
 
   if (!modal) {
-    console.error(
-      "App modal nahi mila."
+    showToast(
+      'App details modal nahi mila',
+      'error'
     );
     return;
   }
 
-  const title =
-    $("#modalAppTitle");
-
-  const description =
-    $("#modalAppDescription");
+  const name =
+    getAppName(app);
 
   const logo =
-    $("#modalAppLogo");
+    getAppLogo(app);
+
+  const description =
+    getAppDescription(app);
+
+  const title =
+    byId('modalAppTitle') ||
+    byId('appModalTitle');
+
+  const image =
+    byId('modalAppLogo') ||
+    byId('appModalLogo');
+
+  const desc =
+    byId('modalAppDescription') ||
+    byId('appModalDescription');
 
   const keyInput =
-    $("#appKey");
+    byId('appKeyInput') ||
+    byId('keyInput') ||
+    byId('verifyKeyInput');
 
-  const purchaseVideo =
-    $("#purchaseVideoBtn");
+  const verifyButton =
+    byId('verifyKeyBtn') ||
+    byId('verifyAppKeyBtn') ||
+    byId('verifyKey');
 
   if (title) {
-    title.textContent =
-      app.name || "App";
+    title.textContent = name;
   }
 
-  if (description) {
-    description.textContent =
-      app.description || "";
+  if (image) {
+    image.src = logo;
+    image.alt = name;
+
+    image.onerror = () => {
+      image.onerror = null;
+      image.src = '/assets/logo.png';
+    };
   }
 
-  if (logo) {
-    logo.innerHTML = app.logo_url
-      ? `
-        <img
-          src="${escapeHTML(
-            app.logo_url
-          )}"
-          alt="${escapeHTML(
-            app.name
-          )}"
-        >
-      `
-      : `
-        <span>PM</span>
-      `;
+  if (desc) {
+    desc.textContent = description;
   }
 
   if (keyInput) {
-    keyInput.value = "";
+    keyInput.value = '';
   }
 
-  if (purchaseVideo) {
-    if (app.purchase_video_url) {
-      purchaseVideo.style.display =
-        "inline-flex";
+  if (verifyButton) {
+    verifyButton.disabled =
+      false;
 
-      purchaseVideo.onclick =
-        () => {
-          window.open(
-            app.purchase_video_url,
-            "_blank",
-            "noopener,noreferrer"
-          );
-        };
-    } else {
-      purchaseVideo.style.display =
-        "none";
-    }
+    verifyButton.textContent =
+      'Verify App Key';
   }
 
-  modal.classList.add("show");
-  modal.style.display = "flex";
+  const unlocked =
+    isAppUnlocked(
+      getAppId(app)
+    );
 
-  setTimeout(() => {
-    keyInput?.focus();
-  }, 100);
+  updateVerifySection(
+    unlocked
+  );
+
+  openModal(modal);
 }
 
-function closeAppDetails() {
-  const modal =
-    $("#appModal") ||
-    $("#appDetailsModal");
+function updateVerifySection(unlocked) {
+  const keyInput =
+    byId('appKeyInput') ||
+    byId('keyInput') ||
+    byId('verifyKeyInput');
 
-  if (!modal) return;
+  const verifyButton =
+    byId('verifyKeyBtn') ||
+    byId('verifyAppKeyBtn') ||
+    byId('verifyKey');
 
-  modal.classList.remove("show");
+  const success =
+    byId('appUnlockedMessage') ||
+    byId('unlockSuccess');
 
-  setTimeout(() => {
-    modal.style.display = "none";
-  }, 200);
+  const openButton =
+    byId('openAppBtn') ||
+    byId('openUnlockedApp');
+
+  if (unlocked) {
+    if (keyInput) {
+      keyInput.style.display =
+        'none';
+    }
+
+    if (verifyButton) {
+      verifyButton.style.display =
+        'none';
+    }
+
+    if (success) {
+      success.style.display =
+        '';
+    }
+
+    if (openButton) {
+      openButton.style.display =
+        '';
+    }
+
+  } else {
+    if (keyInput) {
+      keyInput.style.display =
+        '';
+    }
+
+    if (verifyButton) {
+      verifyButton.style.display =
+        '';
+    }
+
+    if (success) {
+      success.style.display =
+        'none';
+    }
+
+    if (openButton) {
+      openButton.style.display =
+        'none';
+    }
+  }
+}
+
+function closeAppModal() {
+  closeModal(
+    byId('appModal') ||
+    byId('appDetailsModal') ||
+    $('.app-modal')
+  );
 
   currentApp = null;
 }
 
 /* =========================================================
-   VERIFY APP KEY
+   VERIFY KEY
    ========================================================= */
 
-async function verifyAppKey(event) {
-  event?.preventDefault();
-
+async function verifyAppKey() {
   if (!currentApp) {
     showToast(
-      "App select nahi hui.",
-      "error"
+      'Pehle app select karo',
+      'error'
     );
     return;
   }
 
-  const input =
-    $("#appKey") ||
-    $("#keyInput");
+  const keyInput =
+    byId('appKeyInput') ||
+    byId('keyInput') ||
+    byId('verifyKeyInput');
 
   const key =
-    input?.value.trim();
+    keyInput?.value.trim();
 
   if (!key) {
     showToast(
-      "App key enter karo.",
-      "error"
+      'App key enter karo',
+      'error'
     );
+    return;
+  }
 
-    input?.focus();
+  const appId =
+    getAppId(currentApp);
+
+  if (!appId) {
+    showToast(
+      'Invalid app',
+      'error'
+    );
     return;
   }
 
   const button =
-    $("#verifyKeyBtn") ||
-    $("#verifyBtn");
+    byId('verifyKeyBtn') ||
+    byId('verifyAppKeyBtn') ||
+    byId('verifyKey');
+
+  const originalText =
+    button?.textContent;
 
   if (button) {
     button.disabled = true;
     button.textContent =
-      "Verifying...";
+      'Verifying...';
   }
 
   try {
-    const result =
-      await api("/keys/verify", {
-        method: "POST",
-        body: JSON.stringify({
-          appId: currentApp.id,
-          key
-        })
-      });
+    const data =
+      await apiFetch(
+        '/keys/verify',
+        {
+          method: 'POST',
+          body: {
+            appId,
+            key
+          }
+        }
+      );
 
-    if (
-      result.success === false
-    ) {
+    /*
+      Backend success response
+      different formats ko support.
+    */
+
+    const success =
+      data?.success === true ||
+      data?.valid === true ||
+      data?.verified === true ||
+      data?.ok === true ||
+      data?.unlocked === true;
+
+    if (!success) {
       throw new Error(
-        result.error ||
-          "Invalid key"
+        getErrorMessage(
+          data,
+          'Invalid app key'
+        )
       );
     }
 
     /*
-     * App unlock save karo.
-     */
-    if (
-      !unlockedApps.includes(
-        currentApp.id
-      )
-    ) {
-      unlockedApps.push(
-        currentApp.id
+      Lifetime unlock browser me save.
+    */
+
+    markAppUnlocked(appId);
+
+    /*
+      Agar backend user unlocked_apps return kare.
+    */
+
+    if (data.user) {
+      currentUser = data.user;
+
+      localStorage.setItem(
+        STORAGE.USER,
+        JSON.stringify(currentUser)
       );
     }
-
-    saveUnlockedApps();
-
-    showToast(
-      "App successfully unlocked."
-    );
-
-    closeAppDetails();
 
     renderApps();
 
-    /*
-     * Agar server ne direct URL diya hai
-     * to wahi open karo.
-     */
-    if (
-      result.homeUrl ||
-      result.home_url
-    ) {
-      window.location.href =
-        result.homeUrl ||
-        result.home_url;
-      return;
-    }
+    updateVerifySection(true);
 
-    /*
-     * Otherwise current app ka
-     * saved URL open karo.
-     */
-    openAppUrl(currentApp);
+    showPurchaseSuccessPopup();
 
   } catch (error) {
-    console.error(error);
+    console.error(
+      'Key verification error:',
+      error
+    );
 
     showToast(
-      error.message ||
-        "Invalid app key.",
-      "error"
+      getErrorMessage(
+        error,
+        'Invalid app key'
+      ),
+      'error'
     );
+
   } finally {
     if (button) {
       button.disabled = false;
+
       button.textContent =
-        "Verify App Key";
+        originalText ||
+        'Verify App Key';
     }
+  }
+}
+
+/* =========================================================
+   PURCHASE SUCCESS POPUP
+   ========================================================= */
+
+function showPurchaseSuccessPopup() {
+  /*
+    Agar HTML me dedicated popup hai,
+    use open karo.
+  */
+
+  const popup =
+    byId('purchaseSuccessPopup') ||
+    byId('successPopup') ||
+    byId('unlockSuccessPopup');
+
+  if (popup) {
+    const appName =
+      byId('successAppName');
+
+    if (appName && currentApp) {
+      appName.textContent =
+        getAppName(currentApp);
+    }
+
+    openModal(popup);
+    return;
+  }
+
+  /*
+    Agar popup HTML me nahi hai,
+    dynamically simple popup banega.
+  */
+
+  const existing =
+    byId('pmSuccessPopup');
+
+  if (existing) {
+    openModal(existing);
+    return;
+  }
+
+  const overlay =
+    document.createElement('div');
+
+  overlay.id =
+    'pmSuccessPopup';
+
+  overlay.className =
+    'modal success-popup';
+
+  overlay.innerHTML = `
+    <div class="modal-content success-content">
+
+      <button
+        class="modal-close"
+        type="button"
+        aria-label="Close"
+        data-close-success
+      >
+        ×
+      </button>
+
+      <div class="success-icon">
+        ✓
+      </div>
+
+      <h2>
+        App Unlocked!
+      </h2>
+
+      <p>
+        ${
+          currentApp
+            ? escapeHTML(getAppName(currentApp))
+            : 'Your app'
+        }
+        successfully unlock ho gaya.
+      </p>
+
+      <button
+        class="primary-btn"
+        type="button"
+        data-open-unlocked
+      >
+        Open App
+      </button>
+
+    </div>
+  `;
+
+  document.body.appendChild(
+    overlay
+  );
+
+  openModal(overlay);
+}
+
+function closeSuccessPopup() {
+  const popup =
+    byId('purchaseSuccessPopup') ||
+    byId('successPopup') ||
+    byId('unlockSuccessPopup') ||
+    byId('pmSuccessPopup');
+
+  closeModal(popup);
+}
+
+/* =========================================================
+   OPEN APP
+   ========================================================= */
+
+function getAppHomeUrl(app) {
+  return (
+    app.homeUrl ||
+    app.home_url ||
+    app.url ||
+    app.appUrl ||
+    app.app_url ||
+    ''
+  );
+}
+
+function openAppUrl(app = currentApp) {
+  if (!app) {
+    showToast(
+      'App select nahi hai',
+      'error'
+    );
+    return;
+  }
+
+  const appId =
+    getAppId(app);
+
+  if (!isAppUnlocked(appId)) {
+    showToast(
+      'Pehle app key verify karo',
+      'error'
+    );
+    return;
+  }
+
+  const url =
+    getAppHomeUrl(app);
+
+  if (!url) {
+    showToast(
+      'Is app ka URL admin ne set nahi kiya',
+      'error'
+    );
+    return;
+  }
+
+  try {
+    const parsed =
+      new URL(
+        url,
+        window.location.origin
+      );
+
+    window.open(
+      parsed.href,
+      '_blank',
+      'noopener,noreferrer'
+    );
+
+  } catch {
+    showToast(
+      'Invalid app URL',
+      'error'
+    );
+  }
+}
+
+/* =========================================================
+   PURCHASE VIDEO
+   ========================================================= */
+
+function getPurchaseVideoUrl(app) {
+  return (
+    app.purchaseVideoUrl ||
+    app.purchase_video_url ||
+    app.purchaseVideo ||
+    app.purchase_video ||
+    ''
+  );
+}
+
+function openPurchaseHelp() {
+  if (!currentApp) {
+    showToast(
+      'App select karo',
+      'error'
+    );
+    return;
+  }
+
+  const url =
+    getPurchaseVideoUrl(
+      currentApp
+    );
+
+  if (!url) {
+    showToast(
+      'Purchase video abhi available nahi hai',
+      'info'
+    );
+    return;
+  }
+
+  try {
+    const parsed =
+      new URL(
+        url,
+        window.location.origin
+      );
+
+    window.open(
+      parsed.href,
+      '_blank',
+      'noopener,noreferrer'
+    );
+
+  } catch {
+    showToast(
+      'Purchase video URL invalid hai',
+      'error'
+    );
   }
 }
 
@@ -574,34 +1795,47 @@ async function verifyAppKey(event) {
 async function loadNotifications() {
   try {
     const data =
-      await api("/notifications");
+      await apiFetch(
+        '/notifications'
+      );
+
+    const result =
+      data?.notifications ||
+      data?.data ||
+      data;
 
     notifications =
-      Array.isArray(data)
-        ? data
-        : data.notifications || [];
+      Array.isArray(result)
+        ? result
+        : [];
 
     renderNotifications();
 
-    updateNotificationCount();
   } catch (error) {
-    console.error(error);
+    console.warn(
+      'Notifications error:',
+      error
+    );
+
+    notifications = [];
+
+    renderNotifications();
   }
 }
 
 function renderNotifications() {
   const container =
-    $("#notificationsList") ||
-    $("#notificationList");
+    byId('notificationList') ||
+    byId('notificationsList') ||
+    $('.notification-list');
 
   if (!container) return;
 
   if (!notifications.length) {
     container.innerHTML = `
       <div class="empty-state small">
-        <p>
-          No notifications available.
-        </p>
+        <div class="empty-icon">🔔</div>
+        <p>No new notifications</p>
       </div>
     `;
 
@@ -610,8 +1844,23 @@ function renderNotifications() {
 
   container.innerHTML =
     notifications
-      .map(
-        (notification) => `
+      .map(notification => {
+        const title =
+          notification.title ||
+          notification.name ||
+          'Notification';
+
+        const message =
+          notification.message ||
+          notification.text ||
+          '';
+
+        const date =
+          notification.created_at ||
+          notification.createdAt ||
+          '';
+
+        return `
           <div class="notification-item">
 
             <div class="notification-icon">
@@ -620,872 +1869,726 @@ function renderNotifications() {
 
             <div class="notification-content">
 
-              <h3>
-                ${escapeHTML(
-                  notification.title
-                )}
-              </h3>
+              <h4>
+                ${escapeHTML(title)}
+              </h4>
 
               <p>
-                ${escapeHTML(
-                  notification.message
-                )}
+                ${escapeHTML(message)}
               </p>
 
-              <small>
-                ${formatDate(
-                  notification.created_at
-                )}
-              </small>
+              ${
+                date
+                  ? `
+                    <small>
+                      ${escapeHTML(
+                        formatDate(date)
+                      )}
+                    </small>
+                  `
+                  : ''
+              }
 
             </div>
 
           </div>
-        `
-      )
-      .join("");
+        `;
+      })
+      .join('');
 }
 
-function updateNotificationCount() {
-  const count =
-    notifications.length;
-
-  const badges = $$(
-    ".notification-count"
-  );
-
-  badges.forEach((badge) => {
-    badge.textContent = count;
-
-    badge.style.display =
-      count > 0
-        ? ""
-        : "none";
-  });
+function formatDate(value) {
+  try {
+    return new Date(value)
+      .toLocaleString(
+        'en-IN',
+        {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        }
+      );
+  } catch {
+    return String(value);
+  }
 }
 
 function openNotifications() {
   const modal =
-    $("#notificationModal") ||
-    $("#notificationsModal");
+    byId('notificationModal') ||
+    byId('notificationsModal') ||
+    $('.notification-modal');
 
-  if (!modal) return;
-
-  modal.classList.add("show");
-  modal.style.display = "flex";
+  if (!modal) {
+    showToast(
+      'Notifications section nahi mila',
+      'error'
+    );
+    return;
+  }
 
   renderNotifications();
+
+  openModal(modal);
 }
 
 function closeNotifications() {
-  const modal =
-    $("#notificationModal") ||
-    $("#notificationsModal");
-
-  if (!modal) return;
-
-  modal.classList.remove("show");
-
-  setTimeout(() => {
-    modal.style.display = "none";
-  }, 200);
+  closeModal(
+    byId('notificationModal') ||
+    byId('notificationsModal') ||
+    $('.notification-modal')
+  );
 }
 
 /* =========================================================
    SEARCH
    ========================================================= */
 
-function searchApps(value) {
-  const query =
-    value.trim().toLowerCase();
+function handleSearch(value) {
+  searchTerm =
+    String(value || '')
+      .trim()
+      .toLowerCase();
 
-  const filtered = apps.filter(
-    (app) => {
-      const name =
-        app.name?.toLowerCase() ||
-        "";
-
-      const description =
-        app.description
-          ?.toLowerCase() ||
-        "";
-
-      const category =
-        app.category
-          ?.toLowerCase() ||
-        "";
-
-      return (
-        name.includes(query) ||
-        description.includes(query) ||
-        category.includes(query)
-      );
-    }
-  );
-
-  renderApps(filtered);
+  renderApps();
 }
 
 /* =========================================================
    TABS
    ========================================================= */
 
-function showAppsTab() {
-  setActiveTab("apps");
-
-  renderApps(apps);
-}
-
-function showMyAppsTab() {
-  setActiveTab("myapps");
-
-  const myApps = apps.filter(
-    (app) =>
-      unlockedApps.includes(
-        app.id
-      )
-  );
-
-  renderApps(myApps);
-}
-
 function setActiveTab(tab) {
+  currentTab =
+    tab === 'myapps'
+      ? 'myapps'
+      : 'apps';
+
   const tabs = $$(
-    "[data-tab]"
+    '[data-tab]'
   );
 
-  tabs.forEach((item) => {
-    item.classList.toggle(
-      "active",
-      item.dataset.tab === tab
+  tabs.forEach(element => {
+    const value =
+      element.dataset.tab;
+
+    element.classList.toggle(
+      'active',
+      value === currentTab
+    );
+
+    element.setAttribute(
+      'aria-selected',
+      value === currentTab
+        ? 'true'
+        : 'false'
     );
   });
+
+  renderApps();
 }
 
 /* =========================================================
-   DRAWER / MENU
+   HERO / NAV
    ========================================================= */
 
-function openDrawer() {
-  const drawer =
-    $("#drawer") ||
-    $("#sideMenu");
+function goToApps() {
+  const section =
+    byId('appsSection') ||
+    byId('exploreApps') ||
+    byId('apps');
 
-  const shade =
-    $("#drawerShade") ||
-    $("#menuShade");
-
-  drawer?.classList.add(
-    "open"
-  );
-
-  shade?.classList.add(
-    "show"
-  );
-}
-
-function closeDrawer() {
-  const drawer =
-    $("#drawer") ||
-    $("#sideMenu");
-
-  const shade =
-    $("#drawerShade") ||
-    $("#menuShade");
-
-  drawer?.classList.remove(
-    "open"
-  );
-
-  shade?.classList.remove(
-    "show"
-  );
+  if (section) {
+    section.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+  }
 }
 
 /* =========================================================
-   TELEGRAM
+   SPLASH
    ========================================================= */
 
-function openTelegram() {
-  window.open(
-    "https://t.me/prepmaster0",
-    "_blank",
-    "noopener,noreferrer"
-  );
-}
+function hideSplash() {
+  const splash =
+    byId('splash') ||
+    $('.splash');
 
-/* =========================================================
-   ACCOUNT
-   ========================================================= */
-
-function openAccountModal() {
-  const modal =
-    $("#accountModal");
-
-  if (!modal) return;
-
-  updateAccountUI();
-
-  modal.classList.add("show");
-  modal.style.display = "flex";
-}
-
-function closeAccountModal() {
-  const modal =
-    $("#accountModal");
-
-  if (!modal) return;
-
-  modal.classList.remove("show");
+  if (!splash) return;
 
   setTimeout(() => {
-    modal.style.display = "none";
-  }, 200);
-}
+    splash.classList.add(
+      'hidden'
+    );
 
-function updateAccountUI() {
-  const loggedIn =
-    Boolean(token);
+    splash.classList.remove(
+      'active'
+    );
 
-  const loginBox =
-    $("#loginBox");
+    setTimeout(() => {
+      splash.style.display =
+        'none';
+    }, 500);
 
-  const registerBox =
-    $("#registerBox");
-
-  const accountBox =
-    $("#loggedInBox");
-
-  if (loginBox) {
-    loginBox.style.display =
-      loggedIn
-        ? "none"
-        : "";
-  }
-
-  if (registerBox) {
-    registerBox.style.display =
-      loggedIn
-        ? "none"
-        : "";
-  }
-
-  if (accountBox) {
-    accountBox.style.display =
-      loggedIn
-        ? ""
-        : "none";
-  }
-
-  const username =
-    $("#accountUsername");
-
-  if (
-    username &&
-    currentUser
-  ) {
-    username.textContent =
-      currentUser.username ||
-      "";
-  }
+  }, 500);
 }
 
 /* =========================================================
-   REGISTER
+   EVENTS
    ========================================================= */
 
-async function register(event) {
-  event?.preventDefault();
+function setupEvents() {
 
-  const username =
-    $("#registerUsername")
-      ?.value.trim();
+  /* -----------------------------------------
+     Account
+  ----------------------------------------- */
 
-  const password =
-    $("#registerPassword")
-      ?.value;
+  const accountBtn =
+    byId('accountBtn') ||
+    byId('accountButton');
 
-  if (!username || !password) {
-    showToast(
-      "Username aur password enter karo.",
-      "error"
-    );
-    return;
-  }
-
-  try {
-    const result =
-      await api("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-          password
-        })
-      });
-
-    if (result.token) {
-      token = result.token;
-
-      localStorage.setItem(
-        "pm_token",
-        token
-      );
-    }
-
-    currentUser =
-      result.user || null;
-
-    await loadMe();
-
-    showToast(
-      "Account successfully created."
-    );
-
-    updateAccountUI();
-
-  } catch (error) {
-    showToast(
-      error.message ||
-        "Registration failed.",
-      "error"
-    );
-  }
-}
-
-/* =========================================================
-   LOGIN
-   ========================================================= */
-
-async function login(event) {
-  event?.preventDefault();
-
-  const username =
-    $("#loginUsername")
-      ?.value.trim();
-
-  const password =
-    $("#loginPassword")
-      ?.value;
-
-  if (!username || !password) {
-    showToast(
-      "Username aur password enter karo.",
-      "error"
-    );
-    return;
-  }
-
-  try {
-    const result =
-      await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          username,
-          password
-        })
-      });
-
-    token = result.token || "";
-
-    if (token) {
-      localStorage.setItem(
-        "pm_token",
-        token
-      );
-    }
-
-    currentUser =
-      result.user || null;
-
-    await loadMe();
-
-    showToast(
-      "Login successful."
-    );
-
-    updateAccountUI();
-
-  } catch (error) {
-    showToast(
-      error.message ||
-        "Login failed.",
-      "error"
-    );
-  }
-}
-
-/* =========================================================
-   CURRENT USER
-   ========================================================= */
-
-async function loadMe() {
-  if (!token) return;
-
-  try {
-    const result =
-      await api("/me");
-
-    currentUser =
-      result.user ||
-      result;
-
-    /*
-     * Server par saved unlocked apps
-     * ko localStorage ke saath sync karo.
-     */
-    const serverUnlocked =
-      currentUser.unlocked_apps ||
-      currentUser.unlockedApps ||
-      [];
-
-    if (Array.isArray(
-      serverUnlocked
-    )) {
-      unlockedApps =
-        Array.from(
-          new Set([
-            ...unlockedApps,
-            ...serverUnlocked
-          ])
-        );
-
-      saveUnlockedApps();
-    }
-
-    updateAccountUI();
-
-    renderApps();
-
-  } catch (error) {
-    console.error(
-      "loadMe:",
-      error
-    );
-
-    /*
-     * Invalid token hone par logout.
-     */
-    if (
-      error.message
-        ?.toLowerCase()
-        .includes("token")
-    ) {
-      logout();
-    }
-  }
-}
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-function logout() {
-  token = "";
-  currentUser = null;
-
-  localStorage.removeItem(
-    "pm_token"
-  );
-
-  /*
-   * Unlocked apps ko delete nahi kar rahe.
-   * Guest unlocks browser me remembered rahenge.
-   */
-
-  updateAccountUI();
-
-  showToast(
-    "Logout successful."
-  );
-}
-
-/* =========================================================
-   THEME
-   ========================================================= */
-
-function initTheme() {
-  const saved =
-    localStorage.getItem(
-      "pm_theme"
-    );
-
-  if (saved === "dark") {
-    document.body.classList.add(
-      "dark"
-    );
-  } else {
-    document.body.classList.remove(
-      "dark"
-    );
-  }
-
-  updateThemeIcon();
-}
-
-function toggleTheme() {
-  document.body.classList.toggle(
-    "dark"
-  );
-
-  const dark =
-    document.body.classList.contains(
-      "dark"
-    );
-
-  localStorage.setItem(
-    "pm_theme",
-    dark ? "dark" : "light"
-  );
-
-  updateThemeIcon();
-}
-
-function updateThemeIcon() {
-  const dark =
-    document.body.classList.contains(
-      "dark"
-    );
-
-  const buttons = $$(
-    "#themeToggle, .theme-toggle"
-  );
-
-  buttons.forEach((button) => {
-    button.textContent =
-      dark ? "☀️" : "🌙";
-  });
-}
-
-/* =========================================================
-   FORMAT DATE
-   ========================================================= */
-
-function formatDate(date) {
-  if (!date) return "";
-
-  try {
-    return new Date(
-      date
-    ).toLocaleString(
-      "en-IN",
-      {
-        dateStyle: "medium",
-        timeStyle: "short"
+  if (accountBtn) {
+    accountBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        openAccountModal();
       }
     );
-  } catch {
-    return "";
   }
-}
 
-/* =========================================================
-   APP COUNT
-   ========================================================= */
+  const loginBtn =
+    byId('loginBtn');
 
-function updateAppCount() {
-  const count =
-    apps.length;
+  if (loginBtn) {
+    loginBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        loginUser();
+      }
+    );
+  }
 
-  $$(".app-count").forEach(
-    (element) => {
-      element.textContent =
-        count;
-    }
-  );
-}
+  const registerBtn =
+    byId('registerBtn');
 
-/* =========================================================
-   EVENT LISTENERS
-   ========================================================= */
+  if (registerBtn) {
+    registerBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        registerUser();
+      }
+    );
+  }
 
-function initEvents() {
+  const showRegisterBtn =
+    byId('showRegisterBtn') ||
+    byId('showRegister') ||
+    byId('createAccountBtn');
 
-  /*
-   * Theme
-   */
-  $$("#themeToggle").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        toggleTheme
-      );
-    }
-  );
+  if (showRegisterBtn) {
+    showRegisterBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        showRegisterForm();
+      }
+    );
+  }
 
-  /*
-   * Search
-   */
-  $("#searchInput")
-    ?.addEventListener(
-      "input",
-      (event) => {
-        searchApps(
+  const showLoginBtn =
+    byId('showLoginBtn') ||
+    byId('showLogin');
+
+  if (showLoginBtn) {
+    showLoginBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        showLoginForm();
+      }
+    );
+  }
+
+  const logoutBtn =
+    byId('logoutBtn');
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        logoutUser();
+      }
+    );
+  }
+
+  /* -----------------------------------------
+     Theme
+  ----------------------------------------- */
+
+  const themeBtn =
+    byId('themeBtn') ||
+    byId('themeToggle');
+
+  if (themeBtn) {
+    themeBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        toggleTheme();
+      }
+    );
+  }
+
+  /* -----------------------------------------
+     Menu
+  ----------------------------------------- */
+
+  const menuBtn =
+    byId('menuBtn') ||
+    byId('hamburgerBtn') ||
+    byId('hamburger');
+
+  if (menuBtn) {
+    menuBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        openDrawer();
+      }
+    );
+  }
+
+  const closeDrawerBtn =
+    byId('closeDrawer') ||
+    byId('drawerClose');
+
+  if (closeDrawerBtn) {
+    closeDrawerBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        closeDrawer();
+      }
+    );
+  }
+
+  const drawerOverlay =
+    byId('drawerOverlay') ||
+    $('.drawer-overlay');
+
+  if (drawerOverlay) {
+    drawerOverlay.addEventListener(
+      'click',
+      closeDrawer
+    );
+  }
+
+  /* -----------------------------------------
+     Telegram
+  ----------------------------------------- */
+
+  const telegramButtons =
+    $$(
+      '[data-action="telegram"]'
+    );
+
+  telegramButtons.forEach(button => {
+    button.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+
+        window.open(
+          TELEGRAM_URL,
+          '_blank',
+          'noopener,noreferrer'
+        );
+      }
+    );
+  });
+
+  const telegramBtn =
+    byId('telegramBtn') ||
+    byId('joinTelegram');
+
+  if (telegramBtn) {
+    telegramBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+
+        window.open(
+          TELEGRAM_URL,
+          '_blank',
+          'noopener,noreferrer'
+        );
+      }
+    );
+  }
+
+  /* -----------------------------------------
+     Notifications
+  ----------------------------------------- */
+
+  const notificationBtn =
+    byId('notificationBtn') ||
+    byId('notificationsBtn') ||
+    byId('bellBtn');
+
+  if (notificationBtn) {
+    notificationBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        openNotifications();
+      }
+    );
+  }
+
+  const closeNotificationBtn =
+    byId('closeNotificationModal') ||
+    byId('closeNotifications');
+
+  if (closeNotificationBtn) {
+    closeNotificationBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        closeNotifications();
+      }
+    );
+  }
+
+  /* -----------------------------------------
+     Search
+  ----------------------------------------- */
+
+  const searchInputs =
+    $$(
+      '#searchInput, #appSearch, .search-input'
+    );
+
+  searchInputs.forEach(input => {
+    input.addEventListener(
+      'input',
+      event => {
+        handleSearch(
           event.target.value
         );
       }
     );
+  });
 
-  /*
-   * Tabs
-   */
-  $$("[data-tab]").forEach(
-    (tab) => {
-      tab.addEventListener(
-        "click",
-        () => {
-          if (
-            tab.dataset.tab ===
-            "myapps"
-          ) {
-            showMyAppsTab();
-          } else {
-            showAppsTab();
-          }
-        }
-      );
-    }
-  );
+  /* -----------------------------------------
+     Tabs
+  ----------------------------------------- */
 
-  /*
-   * Notification button
-   */
-  $$("#notificationBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        openNotifications
-      );
-    }
-  );
+  $$('[data-tab]').forEach(tab => {
+    tab.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
 
-  /*
-   * Close notification
-   */
-  $$("#closeNotificationModal").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        closeNotifications
-      );
-    }
-  );
-
-  /*
-   * Drawer
-   */
-  $$("#menuBtn, #hamburgerBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        openDrawer
-      );
-    }
-  );
-
-  $$("#drawerShade, #menuShade").forEach(
-    (element) => {
-      element.addEventListener(
-        "click",
-        closeDrawer
-      );
-    }
-  );
-
-  /*
-   * Telegram
-   */
-  $$("#telegramBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        openTelegram
-      );
-    }
-  );
-
-  /*
-   * Account
-   */
-  $$("#accountBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        openAccountModal
-      );
-    }
-  );
-
-  $$("#closeAccountModal").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        closeAccountModal
-      );
-    }
-  );
-
-  /*
-   * Login
-   */
-  $("#loginForm")
-    ?.addEventListener(
-      "submit",
-      login
-    );
-
-  /*
-   * Register
-   */
-  $("#registerForm")
-    ?.addEventListener(
-      "submit",
-      register
-    );
-
-  /*
-   * Logout
-   */
-  $$("#logoutBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        logout
-      );
-    }
-  );
-
-  /*
-   * App key verification
-   */
-  $("#appKeyForm")
-    ?.addEventListener(
-      "submit",
-      verifyAppKey
-    );
-
-  /*
-   * Alternative verify buttons
-   */
-  $$("#verifyKeyBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        verifyAppKey
-      );
-    }
-  );
-
-  /*
-   * Close app modal
-   */
-  $$("#closeAppModal, #closeAppDetails")
-    .forEach(
-      (button) => {
-        button.addEventListener(
-          "click",
-          closeAppDetails
+        setActiveTab(
+          event.currentTarget.dataset.tab
         );
       }
     );
+  });
 
-  /*
-   * Purchase video
-   * Actual URL currentApp se set hota hai.
-   */
-  $$("#purchaseVideoBtn").forEach(
-    (button) => {
-      button.addEventListener(
-        "click",
-        () => {
-          if (
-            currentApp?.purchase_video_url
-          ) {
-            window.open(
-              currentApp.purchase_video_url,
-              "_blank",
-              "noopener,noreferrer"
-            );
-          }
-        }
-      );
-    }
-  );
+  /* -----------------------------------------
+     App Grid
+  ----------------------------------------- */
 
-  /*
-   * Escape key
-   */
   document.addEventListener(
-    "keydown",
-    (event) => {
-      if (
-        event.key !== "Escape"
-      ) {
+    'click',
+    event => {
+
+      const card =
+        event.target.closest(
+          '.app-card'
+        );
+
+      if (card) {
+        const id =
+          card.dataset.appId;
+
+        const app =
+          apps.find(
+            item =>
+              getAppId(item) ===
+              String(id)
+          );
+
+        if (app) {
+          openAppDetails(app);
+        }
+
         return;
       }
 
-      closeAppDetails();
-      closeNotifications();
-      closeAccountModal();
-      closeDrawer();
+      const closeBtn =
+        event.target.closest(
+          '[data-close-modal]'
+        );
+
+      if (closeBtn) {
+        const modal =
+          closeBtn.closest(
+            '.modal'
+          );
+
+        closeModal(modal);
+
+        return;
+      }
+
+      const closeSuccess =
+        event.target.closest(
+          '[data-close-success]'
+        );
+
+      if (closeSuccess) {
+        closeSuccessPopup();
+        return;
+      }
+
+      const openUnlocked =
+        event.target.closest(
+          '[data-open-unlocked]'
+        );
+
+      if (openUnlocked) {
+        closeSuccessPopup();
+        openAppUrl();
+        return;
+      }
     }
   );
 
-  /*
-   * Modal background click
-   */
-  $$(".modal").forEach(
-    (modal) => {
-      modal.addEventListener(
-        "click",
-        (event) => {
-          if (
-            event.target === modal
-          ) {
-            modal.classList.remove(
-              "show"
-            );
+  /* -----------------------------------------
+     App Modal
+  ----------------------------------------- */
 
-            setTimeout(() => {
-              modal.style.display =
-                "none";
-            }, 200);
-          }
+  const closeAppBtn =
+    byId('closeAppModal') ||
+    byId('closeAppDetails');
+
+  if (closeAppBtn) {
+    closeAppBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        closeAppModal();
+      }
+    );
+  }
+
+  const verifyBtn =
+    byId('verifyKeyBtn') ||
+    byId('verifyAppKeyBtn') ||
+    byId('verifyKey');
+
+  if (verifyBtn) {
+    verifyBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        verifyAppKey();
+      }
+    );
+  }
+
+  const keyInput =
+    byId('appKeyInput') ||
+    byId('keyInput') ||
+    byId('verifyKeyInput');
+
+  if (keyInput) {
+    keyInput.addEventListener(
+      'keydown',
+      event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          verifyAppKey();
         }
-      );
+      }
+    );
+  }
+
+  const openAppBtn =
+    byId('openAppBtn') ||
+    byId('openUnlockedApp');
+
+  if (openAppBtn) {
+    openAppBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        openAppUrl();
+      }
+    );
+  }
+
+  const purchaseHelpBtn =
+    byId('purchaseHelpBtn') ||
+    byId('howToPurchaseBtn') ||
+    byId('purchaseVideoBtn');
+
+  if (purchaseHelpBtn) {
+    purchaseHelpBtn.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        openPurchaseHelp();
+      }
+    );
+  }
+
+  /* -----------------------------------------
+     Close modal when clicking outside
+  ----------------------------------------- */
+
+  document.addEventListener(
+    'click',
+    event => {
+      const modal =
+        event.target.classList?.contains(
+          'modal'
+        )
+          ? event.target
+          : null;
+
+      if (modal) {
+        closeModal(modal);
+      }
     }
+  );
+
+  /* -----------------------------------------
+     Escape key
+  ----------------------------------------- */
+
+  document.addEventListener(
+    'keydown',
+    event => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      closeDrawer();
+      closeAllModals();
+    }
+  );
+
+  /* -----------------------------------------
+     Enter key login
+  ----------------------------------------- */
+
+  const loginPassword =
+    byId('loginPassword');
+
+  if (loginPassword) {
+    loginPassword.addEventListener(
+      'keydown',
+      event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          loginUser();
+        }
+      }
+    );
+  }
+
+  const registerPassword =
+    byId('registerPassword');
+
+  if (registerPassword) {
+    registerPassword.addEventListener(
+      'keydown',
+      event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          registerUser();
+        }
+      }
+    );
+  }
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+
+async function initApp() {
+
+  /*
+    Theme first
+  */
+
+  applyTheme(
+    getSavedTheme()
+  );
+
+  /*
+    Client ID
+  */
+
+  getClientId();
+
+  /*
+    Saved user immediately show karo
+    taaki refresh par Account state
+    instantly visible ho.
+  */
+
+  currentUser =
+    getSavedUser();
+
+  updateAccountUI();
+
+  /*
+    Events
+  */
+
+  setupEvents();
+
+  /*
+    Apps + notifications
+  */
+
+  await Promise.allSettled([
+    loadApps(),
+    loadNotifications()
+  ]);
+
+  /*
+    Server se login verify/restore
+  */
+
+  if (getToken()) {
+    await loadMe();
+  }
+
+  /*
+    Splash
+  */
+
+  hideSplash();
+
+  console.log(
+    'Prep Master initialized'
   );
 }
 
 /* =========================================================
    GLOBAL FUNCTIONS
+   =========================================================
+   HTML ke onclick="" ke liye bhi available
    ========================================================= */
-
-window.handleAppClick =
-  handleAppClick;
-
-window.openAppDetails =
-  openAppDetails;
-
-window.closeAppDetails =
-  closeAppDetails;
-
-window.verifyAppKey =
-  verifyAppKey;
-
-window.openNotifications =
-  openNotifications;
-
-window.closeNotifications =
-  closeNotifications;
-
-window.openDrawer =
-  openDrawer;
-
-window.closeDrawer =
-  closeDrawer;
-
-window.openTelegram =
-  openTelegram;
 
 window.openAccountModal =
   openAccountModal;
@@ -1493,61 +2596,72 @@ window.openAccountModal =
 window.closeAccountModal =
   closeAccountModal;
 
-window.login =
-  login;
+window.loginUser =
+  loginUser;
 
-window.register =
-  register;
+window.registerUser =
+  registerUser;
 
-window.logout =
-  logout;
+window.logoutUser =
+  logoutUser;
+
+window.openDrawer =
+  openDrawer;
+
+window.closeDrawer =
+  closeDrawer;
 
 window.toggleTheme =
   toggleTheme;
 
-window.showAppsTab =
-  showAppsTab;
+window.loadApps =
+  loadApps;
 
-window.showMyAppsTab =
-  showMyAppsTab;
+window.openAppDetails =
+  openAppDetails;
 
-window.searchApps =
-  searchApps;
+window.closeAppModal =
+  closeAppModal;
+
+window.verifyAppKey =
+  verifyAppKey;
+
+window.openAppUrl =
+  openAppUrl;
+
+window.openPurchaseHelp =
+  openPurchaseHelp;
+
+window.openNotifications =
+  openNotifications;
+
+window.closeNotifications =
+  closeNotifications;
+
+window.setActiveTab =
+  setActiveTab;
+
+window.handleSearch =
+  handleSearch;
+
+window.goToApps =
+  goToApps;
 
 /* =========================================================
    START
    ========================================================= */
 
-document.addEventListener(
-  "DOMContentLoaded",
-  async () => {
-
-    initTheme();
-    initEvents();
-
-    /*
-     * Splash
-     */
-    hideSplash();
-
-    /*
-     * User account restore
-     */
-    if (token) {
-      await loadMe();
+if (
+  document.readyState ===
+  'loading'
+) {
+  document.addEventListener(
+    'DOMContentLoaded',
+    initApp,
+    {
+      once: true
     }
-
-    /*
-     * Apps + notifications
-     */
-    await Promise.all([
-      loadApps(),
-      loadNotifications()
-    ]);
-
-    /*
-     * Default tab
-     */
-    showAppsTab();
-  }
-);
+  );
+} else {
+  initApp();
+}
