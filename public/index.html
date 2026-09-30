@@ -1,174 +1,120 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8" />
   <meta
     name="viewport"
-    content="width=device-width,initial-scale=1"
-  >
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <meta
+    name="theme-color"
+    content="#ffffff"
+  />
 
   <title>Prep Master</title>
 
   <link
     rel="stylesheet"
     href="/css/app.css"
-  >
+  />
 </head>
 
 <body>
 
-  <!-- SPLASH -->
-  <div id="splash" class="splash">
-    <img
-      src="/assets/logo.png"
-      alt="Prep Master"
-    >
+  <!-- =========================================
+       HEADER
+  ========================================== -->
 
-    <strong>
-      Prep Master
-    </strong>
-  </div>
+  <header class="home-header">
+
+    <div class="header-left">
+
+      <button
+        type="button"
+        id="menuBtn"
+        class="menu-btn"
+        aria-label="Open menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
 
 
-  <!-- HEADER -->
-  <header class="topbar">
-
-    <div class="brand">
-
-      <img
-        src="/assets/logo.png"
-        alt="Prep Master"
+      <a
+        href="/"
+        class="brand"
       >
 
-      <span>
-        Prep Master
-      </span>
+        <img
+          src="/assets/logo.png"
+          alt="Prep Master"
+          class="brand-logo"
+          onerror="this.style.display='none'"
+        />
+
+        <div class="brand-text">
+          <strong>Prep Master</strong>
+          <span>Study smarter</span>
+        </div>
+
+      </a>
 
     </div>
 
 
-    <!-- THREE DOTS -->
-    <button
-      id="menuBtn"
-      class="menu-btn"
-      aria-label="Menu"
-    >
-      ⋮
-    </button>
-
-  </header>
-
-
-  <!-- MENU -->
-  <aside
-    id="drawer"
-    class="drawer"
-  >
-
-    <div class="drawer-head">
-
-      <strong>
-        Menu
-      </strong>
+    <div class="header-actions">
 
       <button
-        id="closeMenu"
-        class="close-menu"
+        type="button"
+        id="notificationBtn"
+        class="icon-btn"
+        aria-label="Notifications"
       >
-        ×
+        🔔
+      </button>
+
+
+      <button
+        type="button"
+        id="accountBtn"
+        class="account-btn"
+      >
+        Account
       </button>
 
     </div>
 
-
-    <!-- 1. APPS -->
-    <button
-      class="menu-item active"
-      data-view="explore"
-    >
-      <span class="menu-number">
-        1
-      </span>
-
-      <span>
-        Apps
-      </span>
-    </button>
+  </header>
 
 
-    <!-- 2. MY APPS -->
-    <button
-      class="menu-item"
-      data-view="myapps"
-    >
-      <span class="menu-number">
-        2
-      </span>
+  <!-- =========================================
+       MAIN
+  ========================================== -->
 
-      <span>
-        My Apps
-      </span>
-    </button>
+  <main class="home-main">
 
 
-    <!-- 3. TELEGRAM -->
-    <a
-      class="menu-item"
-      href="https://t.me/prepmaster0"
-      target="_blank"
-      rel="noopener"
-    >
-      <span class="menu-number">
-        3
-      </span>
+    <!-- HERO -->
 
-      <span>
-        Join Telegram
-      </span>
-    </a>
+    <section class="hero-section">
 
+      <div class="hero-content">
 
-    <!-- 4. ACCOUNT -->
-    <button
-      id="accountBtn"
-      class="menu-item"
-    >
-      <span class="menu-number">
-        4
-      </span>
-
-      <span>
-        Account
-      </span>
-    </button>
-
-  </aside>
-
-
-  <div
-    id="shade"
-    class="shade"
-  ></div>
-
-
-  <!-- MAIN -->
-  <main>
-
-    <!-- WELCOME -->
-    <section class="welcome">
-
-      <div>
-
-        <span class="welcome-small">
-          WELCOME TO
+        <span class="hero-badge">
+          PREP MASTER
         </span>
 
         <h1>
-          Prep Master
+          Learn better.
+          <br />
+          Prepare smarter.
         </h1>
 
         <p>
-          Your study partner for a better tomorrow.
+          Your learning apps, batches and study
+          resources — all in one place.
         </p>
 
       </div>
@@ -177,46 +123,119 @@
 
 
     <!-- SEARCH -->
-    <div class="search-box">
 
-      <span>
-        🔍
-      </span>
+    <section class="search-section">
 
-      <input
-        id="search"
-        type="search"
-        placeholder="Search apps..."
-      >
+      <div class="search-box">
 
-    </div>
+        <span class="search-icon">
+          🔍
+        </span>
+
+        <input
+          type="search"
+          id="searchInput"
+          placeholder="Search apps..."
+          autocomplete="off"
+        />
+
+      </div>
+
+    </section>
 
 
-    <!-- APP SECTION -->
+    <!-- TABS -->
+
+    <section class="tabs-section">
+
+      <div class="tabs">
+
+        <button
+          type="button"
+          class="tab active"
+          data-tab="apps"
+        >
+          Apps
+        </button>
+
+
+        <button
+          type="button"
+          class="tab"
+          data-tab="myapps"
+        >
+          My Apps
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- APPS -->
+
     <section class="apps-section">
 
-      <div class="section-title">
+      <div class="section-top">
 
-        <h2 id="viewTitle">
-          Apps
-        </h2>
+        <div>
+          <h2>
+            Explore Apps
+          </h2>
 
-        <span id="appCount"></span>
+          <p>
+            Choose an app and start learning.
+          </p>
+        </div>
 
       </div>
 
 
       <div
         id="appsGrid"
-        class="grid"
-      ></div>
-
-
-      <div
-        id="empty"
-        class="empty hidden"
+        class="apps-grid"
       >
-        No apps found.
+
+        <div class="loading">
+          Loading apps...
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- TELEGRAM -->
+
+    <section class="telegram-section">
+
+      <div class="telegram-card">
+
+        <div class="telegram-icon">
+          ✈
+        </div>
+
+        <div class="telegram-content">
+
+          <strong>
+            Join Prep Master Telegram
+          </strong>
+
+          <span>
+            Get updates, announcements and support.
+          </span>
+
+        </div>
+
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="window.open('https://t.me/prepmaster0','_blank')"
+        >
+          Join
+        </button>
+
       </div>
 
     </section>
@@ -224,142 +243,134 @@
   </main>
 
 
-  <!-- NOTIFICATION MODAL -->
-  <div
-    id="noticeModal"
-    class="modal"
-  >
+  <!-- =========================================
+       FOOTER
+  ========================================== -->
 
-    <div class="modal-card">
+  <footer class="home-footer">
 
-      <button
-        class="x"
-        data-close="noticeModal"
-      >
-        ×
-      </button>
-
-      <h3>
-        Notifications
-      </h3>
-
-      <div id="notifications"></div>
-
-    </div>
-
-  </div>
-
-
-  <!-- APP MODAL -->
-  <div
-    id="appModal"
-    class="modal"
-  >
-
-    <div class="modal-card app-modal">
-
-      <button
-        class="x"
-        data-close="appModal"
-      >
-        ×
-      </button>
+    <div class="footer-brand">
 
       <img
-        id="detailLogo"
-        class="detail-logo"
         src="/assets/logo.png"
-        alt=""
-      >
+        alt="Prep Master"
+        onerror="this.style.display='none'"
+      />
 
-      <h3 id="detailName"></h3>
-
-      <p id="detailDesc"></p>
-
-
-      <label>
-        App Key
-      </label>
-
-      <input
-        id="keyInput"
-        placeholder="Enter your app key"
-      >
-
-
-      <button
-        id="verifyBtn"
-        class="primary"
-      >
-        Verify App Key
-      </button>
-
-
-      <a
-        id="purchaseVideo"
-        class="secondary hidden"
-        target="_blank"
-        rel="noopener"
-      >
-        How to Purchase Premium?
-      </a>
-
-
-      <p
-        id="keyStatus"
-        class="status"
-      ></p>
+      <strong>
+        Prep Master
+      </strong>
 
     </div>
 
-  </div>
+
+    <p>
+      Learn smarter. Prepare better.
+    </p>
 
 
-  <!-- ACCOUNT MODAL -->
+    <div class="footer-links">
+
+      <a
+        href="https://t.me/prepmaster0"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Telegram
+      </a>
+
+    </div>
+
+
+    <p class="copyright">
+      © 2026 Prep Master
+    </p>
+
+    <p class="developer">
+      DEVELOPED BY SUBHAN ALI
+    </p>
+
+  </footer>
+
+
+  <!-- =========================================
+       ACCOUNT MODAL
+       JS ISKO DYNAMICALLY BHI HANDLE KARTA HAI
+  ========================================== -->
+
   <div
     id="accountModal"
-    class="modal"
+    class="modal-overlay"
   >
 
-    <div class="modal-card">
+    <div class="modal">
 
-      <button
-        class="x"
-        data-close="accountModal"
-      >
-        ×
-      </button>
+      <div class="modal-head">
 
-      <h3>
-        Account
-      </h3>
+        <h3>
+          Account
+        </h3>
 
-
-      <div id="accountLoggedOut">
-
-        <input
-          id="username"
-          placeholder="Username"
+        <button
+          type="button"
+          id="closeAccountModal"
+          class="modal-close"
         >
+          ×
+        </button>
 
-        <input
-          id="password"
-          type="password"
-          placeholder="Password"
-        >
+      </div>
 
-        <div class="row">
+
+      <div id="accountContent">
+
+        <div class="form-group">
+
+          <label for="userUsername">
+            Username
+          </label>
+
+          <input
+            id="userUsername"
+            type="text"
+            placeholder="Username"
+            autocomplete="username"
+          />
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="userPassword">
+            Password
+          </label>
+
+          <input
+            id="userPassword"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+          />
+
+        </div>
+
+
+        <div class="button-row">
 
           <button
-            id="loginBtn"
-            class="primary"
+            type="button"
+            id="userLoginBtn"
+            class="btn btn-primary"
           >
             Login
           </button>
 
+
           <button
-            id="registerBtn"
-            class="secondary"
+            type="button"
+            id="userRegisterBtn"
+            class="btn btn-secondary"
           >
             Create Account
           </button>
@@ -368,33 +379,45 @@
 
       </div>
 
-
-      <div
-        id="accountLoggedIn"
-        class="hidden"
-      >
-
-        <p id="accountInfo"></p>
-
-        <button
-          id="logoutBtn"
-          class="secondary"
-        >
-          Logout
-        </button>
-
-      </div>
-
-
-      <p
-        id="accountStatus"
-        class="status"
-      ></p>
-
     </div>
 
   </div>
 
+
+  <!-- =========================================
+       ACCOUNT INFO
+  ========================================== -->
+
+  <div
+    id="accountName"
+    style="display:none;"
+  >
+    Guest
+  </div>
+
+  <button
+    type="button"
+    id="accountLoginBtn"
+    style="display:none;"
+  >
+    Login
+  </button>
+
+
+  <!-- =========================================
+       APP MESSAGE
+  ========================================== -->
+
+  <div
+    id="appMessage"
+    class="status"
+    style="display:none;"
+  ></div>
+
+
+  <!-- =========================================
+       JAVASCRIPT
+  ========================================== -->
 
   <script src="/js/app.js"></script>
 
