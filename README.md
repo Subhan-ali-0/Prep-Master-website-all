@@ -1,49 +1,83 @@
-# Prep Master — Supabase Edition
+# Prep Master
 
-## Stack
-- Node.js + Express
-- Supabase PostgreSQL
-- JWT + bcryptjs
-- Plain HTML/CSS/JS frontend
+Prep Master is a learning platform built with Node.js, Express and Supabase.
 
-## 1. Create Supabase project
-Create a project at Supabase and open SQL Editor.
+It supports multiple apps, premium app keys, batch loading through external APIs, user accounts, AI Doubts and Community.
 
-## 2. Run the database schema
-Copy everything from `supabase/schema.sql` into Supabase SQL Editor and run it.
-
-## 3. Environment variables
-Set these on Render:
-- `SUPABASE_URL` = your Supabase Project URL
-- `SUPABASE_SERVICE_ROLE_KEY` = Supabase service-role key (server only; never expose it in frontend)
-- `JWT_SECRET` = a long random secret
-- `ADMIN_USERNAME` = your admin username
-- `ADMIN_PASSWORD` = your admin password
-- `PORT` = 10000
-
-`PUBLIC_BASE_URL` is optional.
-
-## 4. Deploy
-Build command:
-`npm install`
-
-Start command:
-`npm start`
-
-## Important
-The service-role key must stay only in Render environment variables. Do not put it in GitHub or frontend JavaScript.
+---
 
 ## Features
-- Admin login and dashboard
-- Add/edit/delete apps
-- App-specific keys
-- Server-side key verification
-- Lifetime unlock
-- App-specific home URL
-- Purchase-help video URL
-- Read-only notifications
-- Explore = active apps
-- My Apps = unlocked apps
-- Light/dark mode
-- Splash logo
-- Optional user account
+
+- Multiple apps from one common system
+- Admin panel
+- App add / edit / delete
+- App logo and description
+- App categories
+- Premium access keys
+- Lifetime app unlock
+- User registration and login
+- Persistent unlocked apps
+- External batch API support
+- Custom batch opening URLs
+- Custom app header
+- Custom header logo
+- Header name and badge
+- App-specific themes
+- AI Doubts
+- AI study image generation
+- AI chat history
+- Community chat
+- Community image sharing
+- Notifications
+- Supabase database
+- Supabase Storage
+- Vercel deployment support
+
+---
+
+# Tech Stack
+
+- Node.js
+- Express.js
+- Supabase
+- PostgreSQL
+- JWT
+- bcrypt
+- Multer
+- OpenAI API
+- Vercel
+
+---
+
+# Project Structure
+
+```text
+prep-master/
+│
+├── public/
+│   ├── index.html
+│   ├── admin.html
+│   ├── learning.html
+│   │
+│   ├── css/
+│   │   ├── app.css
+│   │   ├── admin.css
+│   │   └── learning-app.css
+│   │
+│   ├── js/
+│   │   ├── app.js
+│   │   ├── admin.js
+│   │   └── learning-app.js
+│   │
+│   └── assets/
+│       └── logo.png
+│
+├── supabase/
+│   └── schema.sql
+│
+├── server.js
+├── package.json
+├── vercel.json
+├── .env.example
+├── .gitignore
+└── README.md
