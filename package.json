@@ -1,11 +1,15 @@
 {
-  "name": "prep-master-supabase",
-  "version": "3.0.0",
-  "private": true,
-  "description": "Prep Master website with Supabase backend",
+  "name": "prep-master",
+  "version": "4.0.0",
+  "description": "Prep Master learning platform with Supabase, premium keys, batches, AI Doubts and Community",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
     "bcryptjs": "^3.0.2",
@@ -13,5 +17,8 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2"
-  }
+  },
+  "devDependencies": {},
+  "license": "UNLICENSED",
+  "private": true
 }
