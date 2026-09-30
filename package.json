@@ -1,6 +1,7 @@
 {
   "name": "prep-master",
   "version": "4.0.0",
+  "type": "module",
   "description": "Prep Master learning platform with Supabase, premium keys, batches, AI Doubts and Community",
   "main": "server.js",
   "scripts": {
