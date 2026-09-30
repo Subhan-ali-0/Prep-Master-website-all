@@ -1,329 +1,175 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prep Master - Admin Panel</title>
-
-  <link
-    rel="stylesheet"
-    href="/css/admin.css"
-  />
+  <link rel="stylesheet" href="/css/admin.css" />
 </head>
 
 <body>
 
-  <!-- =========================================
-       LOGIN
-  ========================================== -->
-
+  <!-- LOGIN SECTION -->
   <section id="loginSection" class="login-section">
-
     <div class="login-card">
 
       <div class="login-logo">
-        <img
-          src="/assets/logo.png"
-          alt="Prep Master"
-          onerror="this.style.display='none'"
-        />
+        <img src="/assets/logo.png" alt="Prep Master"
+          onerror="this.style.display='none'" />
       </div>
 
       <h1>Prep Master</h1>
-
-      <p class="login-subtitle">
-        Admin Panel
-      </p>
+      <p class="login-subtitle">Admin Panel</p>
 
       <div class="form-group">
-        <label for="adminUsername">
-          Username
-        </label>
-
-        <input
-          type="text"
-          id="adminUsername"
-          placeholder="Admin username"
-          autocomplete="username"
-        />
+        <label for="adminUsername">Username</label>
+        <input type="text" id="adminUsername"
+          placeholder="Admin username" autocomplete="username" />
       </div>
 
       <div class="form-group">
-        <label for="adminPassword">
-          Password
-        </label>
-
-        <input
-          type="password"
-          id="adminPassword"
-          placeholder="Admin password"
-          autocomplete="current-password"
-        />
+        <label for="adminPassword">Password</label>
+        <input type="password" id="adminPassword"
+          placeholder="Admin password" autocomplete="current-password" />
       </div>
 
-      <button
-        type="button"
-        id="adminLoginBtn"
-        class="btn btn-primary btn-full"
-      >
+      <button type="button" id="adminLoginBtn"
+        class="btn btn-primary btn-full">
         Login
       </button>
 
     </div>
-
   </section>
 
 
-  <!-- =========================================
-       ADMIN SECTION
-  ========================================== -->
-
-  <section
-    id="adminSection"
-    class="admin-section"
-    style="display:none;"
-  >
+  <!-- ADMIN SECTION -->
+  <section id="adminSection" class="admin-section" style="display:none;">
 
     <!-- SIDEBAR -->
-
     <aside class="admin-sidebar">
 
       <div class="sidebar-logo">
-
-        <img
-          src="/assets/logo.png"
-          alt="Prep Master"
-          onerror="this.style.display='none'"
-        />
+        <img src="/assets/logo.png" alt="Prep Master"
+          onerror="this.style.display='none'" />
 
         <div>
           <strong>Prep Master</strong>
           <span>Admin</span>
         </div>
-
       </div>
 
-
       <nav class="admin-nav">
-
-        <a href="#dashboard">
-          Dashboard
-        </a>
-
-        <a href="#apps">
-          Apps
-        </a>
-
-        <a href="#keys">
-          Keys
-        </a>
-
-        <a href="#notifications">
-          Notifications
-        </a>
-
+        <a href="#dashboard">Dashboard</a>
+        <a href="#apps">Apps</a>
+        <a href="#keys">Keys</a>
+        <a href="#notifications">Notifications</a>
       </nav>
 
-
       <div class="sidebar-bottom">
-
-        <button
-          type="button"
-          id="adminLogoutBtn"
-          class="btn btn-danger btn-full"
-        >
+        <button type="button" id="adminLogoutBtn"
+          class="btn btn-danger btn-full">
           Logout
         </button>
-
       </div>
 
     </aside>
 
 
     <!-- MAIN -->
-
     <main class="admin-main">
 
       <!-- TOP BAR -->
-
       <header class="admin-topbar">
-
         <div>
           <h1>Admin Panel</h1>
           <p>Manage your Prep Master apps</p>
         </div>
 
-        <button
-          type="button"
-          id="logoutBtn"
-          class="btn btn-danger"
-          style="display:none;"
-        >
+        <button type="button" id="logoutBtn"
+          class="btn btn-danger" style="display:none;">
           Logout
         </button>
-
       </header>
 
 
-      <!-- =====================================
-           DASHBOARD
-      ====================================== -->
-
-      <section
-        id="dashboard"
-        class="admin-card"
-      >
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="admin-card">
 
         <div class="section-heading">
-
           <div>
             <h2>Dashboard</h2>
-
-            <p>
-              Prep Master system overview
-            </p>
+            <p>Prep Master system overview</p>
           </div>
-
         </div>
-
 
         <div class="stats-grid">
 
           <div class="stat-card">
-
-            <span class="stat-label">
-              Total Apps
-            </span>
-
-            <strong id="totalApps">
-              —
-            </strong>
-
+            <span class="stat-label">Total Apps</span>
+            <strong id="totalApps">—</strong>
           </div>
 
-
           <div class="stat-card">
-
-            <span class="stat-label">
-              Active Apps
-            </span>
-
-            <strong id="activeApps">
-              —
-            </strong>
-
+            <span class="stat-label">Active Apps</span>
+            <strong id="activeApps">—</strong>
           </div>
 
-
           <div class="stat-card">
-
-            <span class="stat-label">
-              Total Keys
-            </span>
-
-            <strong id="totalKeys">
-              —
-            </strong>
-
+            <span class="stat-label">Total Keys</span>
+            <strong id="totalKeys">—</strong>
           </div>
 
-
           <div class="stat-card">
-
-            <span class="stat-label">
-              Notifications
-            </span>
-
-            <strong id="totalNotifications">
-              —
-            </strong>
-
+            <span class="stat-label">Notifications</span>
+            <strong id="totalNotifications">—</strong>
           </div>
 
         </div>
 
-
         <div class="quick-actions">
-
-          <button
-            type="button"
-            id="addNewAppBtn"
-            class="btn btn-primary"
-          >
+          <button type="button" id="addNewAppBtn"
+            class="btn btn-primary">
             + Add New App
           </button>
-
         </div>
 
       </section>
 
 
-      <!-- =====================================
-           APPS
-      ====================================== -->
-
-      <section
-        id="apps"
-        class="admin-card"
-      >
+      <!-- APPS SECTION -->
+      <section id="apps" class="admin-card">
 
         <div class="section-heading">
-
           <div>
             <h2>Apps</h2>
-
-            <p>
-              Add and manage all Prep Master apps
-            </p>
+            <p>Add and manage all Prep Master apps</p>
           </div>
 
-          <button
-            type="button"
-            id="newAppBtn"
-            class="btn btn-primary"
-          >
+          <button type="button" id="newAppBtn"
+            class="btn btn-primary">
             + New App
           </button>
-
         </div>
 
 
         <!-- APP FORM -->
-
         <div class="app-editor">
 
           <div class="editor-header">
-
             <div>
-              <h3 id="appFormTitle">
-                Add App
-              </h3>
-
-              <p>
-                Configure your app completely
-              </p>
+              <h3 id="appFormTitle">Add App</h3>
+              <p>Configure your app completely</p>
             </div>
-
           </div>
 
 
-          <form
-            id="appForm"
-            onsubmit="return false;"
-          >
+          <form id="appForm" onsubmit="return false;">
 
-            <input
-              type="hidden"
-              id="appId"
-            />
+            <input type="hidden" id="appId" />
 
 
-            <!-- BASIC INFO -->
-
+            <!-- BASIC INFORMATION -->
             <div class="form-section">
 
               <h3>Basic Information</h3>
@@ -331,74 +177,120 @@
               <div class="form-grid">
 
                 <div class="form-group">
-
-                  <label for="appName">
-                    App Name *
-                  </label>
-
-                  <input
-                    type="text"
-                    id="appName"
-                    placeholder="Example: PW"
-                  />
-
+                  <label for="appName">App Name *</label>
+                  <input type="text" id="appName"
+                    placeholder="Example: PW" />
                 </div>
-
 
                 <div class="form-group">
-
-                  <label for="appCategory">
-                    Category
-                  </label>
-
-                  <input
-                    type="text"
-                    id="appCategory"
-                    placeholder="Example: Education"
-                  />
-
+                  <label for="appCategory">Category</label>
+                  <input type="text" id="appCategory"
+                    placeholder="Example: Education" />
                 </div>
 
 
+                <!-- APP LOGO UPLOAD -->
                 <div class="form-group full">
 
-                  <label for="appLogoUrl">
-                    App Logo URL
-                  </label>
+                  <label for="appLogoFile">Upload App Logo</label>
 
                   <input
-                    type="url"
-                    id="appLogoUrl"
-                    placeholder="https://example.com/logo.png"
+                    type="file"
+                    id="appLogoFile"
+                    accept="image/png,image/jpeg,image/webp"
                   />
 
                   <small>
-                    Ye logo app card par show hoga.
+                    PNG, JPG ya WEBP image select karein.
                   </small>
 
+                  <div class="upload-row">
+                    <button
+                      type="button"
+                      id="uploadAppLogoBtn"
+                      class="btn btn-secondary"
+                    >
+                      Upload App Logo
+                    </button>
+                  </div>
+
+                  <div class="header-preview">
+                    <img
+                      id="appLogoPreview"
+                      src=""
+                      alt="App Logo Preview"
+                      style="display:none;max-width:120px;max-height:120px;object-fit:contain;"
+                    />
+                  </div>
+
+                  <!-- Existing JS compatibility -->
+                  <input type="hidden" id="appLogoUrl" />
+
                 </div>
 
 
                 <div class="form-group full">
-
-                  <label for="appDescription">
-                    Description
-                  </label>
-
-                  <textarea
-                    id="appDescription"
-                    rows="4"
-                    placeholder="App ke baare me description..."
-                  ></textarea>
-
+                  <label for="appDescription">Description</label>
+                  <textarea id="appDescription" rows="4"
+                    placeholder="App ke baare me description..."></textarea>
                 </div>
 
+                <div class="form-group full">
+                  <label for="purchaseVideoUrl">
+                    Purchase Help Video URL
+                  </label>
+                  <input type="url" id="purchaseVideoUrl"
+                    placeholder="https://t.me/..." />
+                  <small>
+                    Premium purchase help button ke liye.
+                  </small>
+                </div>
+
+              </div>
+            </div>
+
+
+            <!-- APP TYPE -->
+            <div class="form-section">
+
+              <h3>App Type</h3>
+
+              <p class="section-help">
+                Select karein ki aap kis tarah ka app add karna chahte hain.
+              </p>
+
+              <div class="form-grid">
 
                 <div class="form-group full">
 
-                  <label for="homeUrl">
-                    Home URL
-                  </label>
+                  <label for="appType">Select App Type</label>
+
+                  <select id="appType">
+                    <option value="website">App 1 - Website App</option>
+                    <option value="batch">App 2 - Batch App</option>
+                  </select>
+
+                </div>
+
+              </div>
+            </div>
+
+
+            <!-- APP 1: WEBSITE APP -->
+            <div class="form-section" id="websiteAppSection">
+
+              <h3>App 1 - Website App</h3>
+
+              <p class="section-help">
+                Website App select karne par user ke app card par click
+                karne se configured website open hogi.
+              </p>
+
+              <div class="form-grid">
+
+                <div class="form-group full">
+
+                  <label for="homeUrl">Website URL *</label>
 
                   <input
                     type="url"
@@ -407,63 +299,41 @@
                   />
 
                   <small>
-                    Optional / legacy field.
-                  </small>
-
-                </div>
-
-
-                <div class="form-group full">
-
-                  <label for="purchaseVideoUrl">
-                    Purchase Help Video URL
-                  </label>
-
-                  <input
-                    type="url"
-                    id="purchaseVideoUrl"
-                    placeholder="https://t.me/..."
-                  />
-
-                  <small>
-                    Premium purchase help button ke liye.
+                    User app open karega toh ye website khulegi.
                   </small>
 
                 </div>
 
               </div>
-
             </div>
 
 
-            <!-- BATCH CONFIGURATION -->
+            <!-- APP 2: BATCH APP -->
+            <div class="form-section" id="batchAppSection">
 
-            <div class="form-section">
-
-              <h3>Batch Configuration</h3>
+              <h3>App 2 - Batch App</h3>
 
               <p class="section-help">
-                Har app ke batches alag API URL se load ho sakte hain.
+                Batch App mein pehle batches load honge. User batch select
+                karega toh uska configured URL open hoga.
               </p>
-
 
               <div class="form-grid">
 
                 <div class="form-group full">
 
                   <label for="batchListUrl">
-                    Batch List API URL
+                    URL 1 - Batch List API URL *
                   </label>
 
                   <input
                     type="url"
                     id="batchListUrl"
-                    placeholder="https://example.com/batches.json"
+                    placeholder="https://example.com/api/batches"
                   />
 
                   <small>
-                    Example:
-                    https://nt.studybeepro.site/batches.json
+                    Is URL se app ke batches load honge.
                   </small>
 
                 </div>
@@ -472,7 +342,7 @@
                 <div class="form-group full">
 
                   <label for="batchOpenUrl">
-                    Batch Open URL
+                    URL 2 - Batch Open URL *
                   </label>
 
                   <input
@@ -482,20 +352,21 @@
                   />
 
                   <small>
-                    Batch ID automatically
-                    <strong>{batchId}</strong>
-                    ki jagah replace hoga.
+                    Batch select karne par {batchId} automatically
+                    selected batch ID se replace hoga.
                   </small>
 
                 </div>
 
               </div>
-
             </div>
 
 
-            <!-- THEMES -->
+            <!-- LEGACY HOME URL -->
+            <input type="hidden" id="legacyHomeUrl" />
 
+
+            <!-- APP THEMES -->
             <div class="form-section">
 
               <h3>App Themes</h3>
@@ -503,95 +374,42 @@
               <div class="form-grid">
 
                 <div class="form-group">
-
-                  <label for="appTheme">
-                    App Theme
-                  </label>
+                  <label for="appTheme">App Theme</label>
 
                   <select id="appTheme">
-
-                    <option value="dark">
-                      Dark
-                    </option>
-
-                    <option value="light">
-                      Light
-                    </option>
-
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
                   </select>
-
                 </div>
 
-
                 <div class="form-group">
-
-                  <label for="aiTheme">
-                    AI Doubts Theme
-                  </label>
-
-                  <select id="aiTheme">
-
-                    <option value="dark">
-                      Dark
-                    </option>
-
-                    <option value="light">
-                      Light
-                    </option>
-
-                  </select>
-
-                </div>
-
-
-                <div class="form-group">
-
-                  <label for="communityTheme">
-                    Community Theme
-                  </label>
+                  <label for="communityTheme">Community Theme</label>
 
                   <select id="communityTheme">
-
-                    <option value="dark">
-                      Dark
-                    </option>
-
-                    <option value="light">
-                      Light
-                    </option>
-
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
                   </select>
-
                 </div>
 
               </div>
-
             </div>
 
 
             <!-- CUSTOM HEADER -->
-
             <div class="form-section">
 
               <div class="section-title-row">
 
                 <div>
                   <h3>Custom Header</h3>
-
                   <p class="section-help">
                     App ke andar custom header show karne ke liye.
                   </p>
                 </div>
 
                 <label class="switch">
-
-                  <input
-                    type="checkbox"
-                    id="headerEnabled"
-                  />
-
+                  <input type="checkbox" id="headerEnabled" />
                   <span class="slider"></span>
-
                 </label>
 
               </div>
@@ -612,7 +430,6 @@
                   />
 
                   <div class="upload-row">
-
                     <button
                       type="button"
                       id="uploadHeaderLogoBtn"
@@ -620,7 +437,6 @@
                     >
                       Upload Logo
                     </button>
-
                   </div>
 
                 </div>
@@ -628,76 +444,43 @@
 
                 <div class="form-group full">
 
-                  <label>
-                    Header Logo Preview
-                  </label>
+                  <label>Header Logo Preview</label>
 
                   <div class="header-preview">
-
                     <img
                       id="headerLogoPreview"
                       src=""
                       alt="Header Logo"
                       style="display:none;"
                     />
-
                   </div>
 
                 </div>
 
 
                 <div class="form-group">
-
-                  <label for="headerLogoUrl">
-                    Header Logo URL
-                  </label>
-
-                  <input
-                    type="url"
-                    id="headerLogoUrl"
-                    placeholder="Uploaded logo URL"
-                  />
-
+                  <label for="headerLogoUrl">Header Logo URL</label>
+                  <input type="url" id="headerLogoUrl"
+                    placeholder="Uploaded logo URL" />
                 </div>
-
 
                 <div class="form-group">
-
-                  <label for="headerName">
-                    Header Name
-                  </label>
-
-                  <input
-                    type="text"
-                    id="headerName"
-                    placeholder="Example: PW Udaan"
-                  />
-
+                  <label for="headerName">Header Name</label>
+                  <input type="text" id="headerName"
+                    placeholder="Example: PW Udaan" />
                 </div>
-
 
                 <div class="form-group">
-
-                  <label for="headerBadge">
-                    Header Badge
-                  </label>
-
-                  <input
-                    type="text"
-                    id="headerBadge"
-                    placeholder="Example: Premium"
-                  />
-
+                  <label for="headerBadge">Header Badge</label>
+                  <input type="text" id="headerBadge"
+                    placeholder="Example: Premium" />
                 </div>
-
 
                 <div class="form-group">
 
                   <label for="headerSize">
                     Header Size
-                    <span id="headerSizeValue">
-                      100%
-                    </span>
+                    <span id="headerSizeValue">100%</span>
                   </label>
 
                   <input
@@ -710,45 +493,31 @@
                   />
 
                   <div class="range-labels">
-
                     <span>70%</span>
                     <span>100%</span>
                     <span>150%</span>
-
                   </div>
 
                 </div>
 
               </div>
-
             </div>
 
 
-            <!-- STATUS -->
-
+            <!-- APP STATUS -->
             <div class="form-section">
 
               <h3>App Status</h3>
 
               <label class="checkbox-row">
-
-                <input
-                  type="checkbox"
-                  id="appActive"
-                  checked
-                />
-
-                <span>
-                  App Active
-                </span>
-
+                <input type="checkbox" id="appActive" checked />
+                <span>App Active</span>
               </label>
 
             </div>
 
 
-            <!-- SAVE -->
-
+            <!-- SAVE APP -->
             <div class="form-actions">
 
               <button
@@ -780,31 +549,18 @@
             </div>
 
           </form>
-
         </div>
 
 
-        <!-- APP LIST -->
-
+        <!-- EXISTING APPS -->
         <div class="list-section">
 
           <div class="list-header">
-
-            <h3>
-              Existing Apps
-            </h3>
-
+            <h3>Existing Apps</h3>
           </div>
 
-          <div
-            id="appsList"
-            class="apps-list"
-          >
-
-            <div class="empty-state">
-              Loading apps...
-            </div>
-
+          <div id="appsList" class="apps-list">
+            <div class="empty-state">Loading apps...</div>
           </div>
 
         </div>
@@ -812,25 +568,14 @@
       </section>
 
 
-      <!-- =====================================
-           KEYS
-      ====================================== -->
-
-      <section
-        id="keys"
-        class="admin-card"
-      >
+      <!-- APP KEYS -->
+      <section id="keys" class="admin-card">
 
         <div class="section-heading">
-
           <div>
             <h2>App Keys</h2>
-
-            <p>
-              Generate and manage premium access keys
-            </p>
+            <p>Generate and manage premium access keys</p>
           </div>
-
         </div>
 
 
@@ -841,27 +586,15 @@
           <div class="form-grid">
 
             <div class="form-group">
-
-              <label for="keyAppId">
-                Select App
-              </label>
+              <label for="keyAppId">Select App</label>
 
               <select id="keyAppId">
-
-                <option value="">
-                  Select App
-                </option>
-
+                <option value="">Select App</option>
               </select>
-
             </div>
 
-
             <div class="form-group">
-
-              <label for="keyCount">
-                Number of Keys
-              </label>
+              <label for="keyCount">Number of Keys</label>
 
               <input
                 type="number"
@@ -870,34 +603,24 @@
                 min="1"
                 max="500"
               />
-
             </div>
 
           </div>
 
-
           <div class="form-actions">
-
-            <button
-              type="button"
-              id="generateKeysBtn"
-              class="btn btn-primary"
-            >
+            <button type="button" id="generateKeysBtn"
+              class="btn btn-primary">
               Generate Keys
             </button>
-
           </div>
 
         </div>
 
 
         <!-- GENERATED KEYS -->
-
         <div class="form-section">
 
-          <h3>
-            Generated Keys
-          </h3>
+          <h3>Generated Keys</h3>
 
           <textarea
             id="generatedKeys"
@@ -909,27 +632,17 @@
         </div>
 
 
-        <!-- KEY LIST -->
-
+        <!-- EXISTING KEYS -->
         <div class="list-section">
 
           <div class="list-header">
-
-            <h3>
-              Existing Keys
-            </h3>
-
+            <h3>Existing Keys</h3>
           </div>
 
-          <div
-            id="keysList"
-            class="key-list"
-          >
-
+          <div id="keysList" class="key-list">
             <div class="empty-state">
               App select karne ke baad keys yahan show hongi.
             </div>
-
           </div>
 
         </div>
@@ -937,67 +650,45 @@
       </section>
 
 
-      <!-- =====================================
-           NOTIFICATIONS
-      ====================================== -->
-
-      <section
-        id="notifications"
-        class="admin-card"
-      >
+      <!-- NOTIFICATIONS -->
+      <section id="notifications" class="admin-card">
 
         <div class="section-heading">
-
           <div>
             <h2>Notifications</h2>
-
-            <p>
-              Users ke liye announcements create karo
-            </p>
+            <p>Users ke liye announcements create karo</p>
           </div>
-
         </div>
 
 
+        <!-- CREATE NOTIFICATION -->
         <div class="form-section">
 
-          <h3>
-            Create Notification
-          </h3>
-
+          <h3>Create Notification</h3>
 
           <div class="form-group">
-
-            <label for="notificationTitle">
-              Title
-            </label>
+            <label for="notificationTitle">Title</label>
 
             <input
               type="text"
               id="notificationTitle"
               placeholder="Notification title"
             />
-
           </div>
 
 
           <div class="form-group">
-
-            <label for="notificationMessage">
-              Message
-            </label>
+            <label for="notificationMessage">Message</label>
 
             <textarea
               id="notificationMessage"
               rows="5"
               placeholder="Notification message..."
             ></textarea>
-
           </div>
 
 
           <div class="form-actions">
-
             <button
               type="button"
               id="createNotificationBtn"
@@ -1005,33 +696,22 @@
             >
               Add Notification
             </button>
-
           </div>
 
         </div>
 
 
-        <!-- NOTIFICATION LIST -->
-
+        <!-- EXISTING NOTIFICATIONS -->
         <div class="list-section">
 
           <div class="list-header">
-
-            <h3>
-              Existing Notifications
-            </h3>
-
+            <h3>Existing Notifications</h3>
           </div>
 
-          <div
-            id="notificationsList"
-            class="notification-list"
-          >
-
+          <div id="notificationsList" class="notification-list">
             <div class="empty-state">
               Loading notifications...
             </div>
-
           </div>
 
         </div>
@@ -1043,17 +723,68 @@
   </section>
 
 
-  <!-- =========================================
-       STATUS MESSAGE
-  ========================================== -->
-
-  <div
-    id="adminMessage"
-    class="status"
-    style="display:none;"
-  ></div>
+  <!-- STATUS MESSAGE -->
+  <div id="adminMessage" class="status" style="display:none;"></div>
 
 
+  <!-- APP TYPE + LOGO PREVIEW -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const appType = document.getElementById("appType");
+      const websiteSection = document.getElementById("websiteAppSection");
+      const batchSection = document.getElementById("batchAppSection");
+
+      function updateAppType() {
+        if (!appType) return;
+
+        const isBatch = appType.value === "batch";
+
+        if (websiteSection) {
+          websiteSection.style.display = isBatch ? "none" : "";
+        }
+
+        if (batchSection) {
+          batchSection.style.display = isBatch ? "" : "none";
+        }
+      }
+
+      appType?.addEventListener("change", updateAppType);
+      updateAppType();
+
+
+      // Logo preview only
+      const logoInput = document.getElementById("appLogoFile");
+      const logoPreview = document.getElementById("appLogoPreview");
+
+      logoInput?.addEventListener("change", function () {
+
+        const file = this.files && this.files[0];
+
+        if (!file || !logoPreview) return;
+
+        if (!file.type.startsWith("image/")) {
+          alert("Please select an image file.");
+          this.value = "";
+          logoPreview.style.display = "none";
+          return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+          logoPreview.src = event.target.result;
+          logoPreview.style.display = "block";
+        };
+
+        reader.readAsDataURL(file);
+      });
+
+    });
+  </script>
+
+
+  <!-- ADMIN JAVASCRIPT -->
   <script src="/js/admin.js"></script>
 
 </body>
