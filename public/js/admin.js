@@ -324,6 +324,14 @@
 
     const file = $("#headerLogoFile");
     if (file) file.value = "";
+
+    const appLogoFile = $("#appLogoFile");
+    if (appLogoFile) appLogoFile.value = "";
+    const appLogoPreview = $("#appLogoPreview");
+    if (appLogoPreview) {
+      appLogoPreview.removeAttribute("src");
+      appLogoPreview.style.display = "none";
+    }
   }
 
   function editApp(id) {
@@ -338,6 +346,11 @@
 
     setValue("appName", app.name);
     setValue("appLogoUrl", app.logo_url);
+    const appLogoPreview = $("#appLogoPreview");
+    if (appLogoPreview && app.logo_url) {
+      appLogoPreview.src = app.logo_url;
+      appLogoPreview.style.display = "block";
+    }
     setValue("homeUrl", app.home_url);
     setValue("appCategory", app.category);
     setValue("appDescription", app.description);
@@ -511,6 +524,38 @@
     } catch (error) {
       showMessage(error.message, "error");
     }
+  }
+
+  /* =========================================
+     APP LOGO UPLOAD
+     ========================================= */
+
+  async function uploadAppLogo() {
+    const input = $("#appLogoFile");
+    const file = input?.files?.[0];
+    if (!file) {
+      showMessage("Pehle app logo image select karo.", "error");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      showMessage("Sirf image file upload karo.", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage("Image maximum 5MB ki ho sakti hai.", "error");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      showMessage("App logo upload ho raha hai...");
+      const data = await api("/api/admin/upload-app-logo", { method: "POST", body: formData });
+      if (!data.url) throw new Error("Upload URL nahi mili.");
+      setValue("appLogoUrl", data.url);
+      const preview = $("#appLogoPreview");
+      if (preview) { preview.src = data.url; preview.style.display = "block"; }
+      showMessage("App logo upload ho gaya.", "success");
+    } catch (error) { showMessage(error.message, "error"); }
   }
 
   /* =========================================
@@ -1058,6 +1103,21 @@
       );
     }
 
+    const appLogoUploadButton = $("#uploadAppLogoBtn");
+    if (appLogoUploadButton) appLogoUploadButton.addEventListener("click", uploadAppLogo);
+
+    const appLogoFileInput = $("#appLogoFile");
+    if (appLogoFileInput) {
+      appLogoFileInput.addEventListener("change", () => {
+        const file = appLogoFileInput.files?.[0];
+        const preview = $("#appLogoPreview");
+        if (file && preview && file.type.startsWith("image/")) {
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = "block";
+        }
+      });
+    }
+
     const uploadButton =
       $("#uploadHeaderLogoBtn") ||
       $("#uploadLogoBtn");
@@ -1201,6 +1261,7 @@
     deleteApp,
     saveApp,
     uploadHeaderLogo,
+    uploadAppLogo,
     generateKeys,
     loadNotifications,
     createNotification,
