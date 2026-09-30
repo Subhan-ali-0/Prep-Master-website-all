@@ -1,977 +1,939 @@
-/* =========================================================
-   PREP MASTER — ADMIN PANEL JAVASCRIPT
-   ========================================================= */
+/* =========================================
+   PREP MASTER - ADMIN PANEL JS
+   ========================================= */
 
-const API_BASE = "/api";
+(() => {
+  "use strict";
 
-let adminToken = localStorage.getItem("pm_admin_token") || "";
-let apps = [];
-let editingAppId = null;
+  const $ = (selector) => document.querySelector(selector);
+  const $$ = (selector) => document.querySelectorAll(selector);
 
+  let apps = [];
+  let editingAppId = null;
 
-/* =========================================================
-   HELPERS
-   ========================================================= */
+  const state = {
+    adminToken: localStorage.getItem("prep_admin_token") || ""
+  };
 
-const $ = (selector) => document.querySelector(selector);
+  /* =========================================
+     HELPERS
+     ========================================= */
 
-const $$ = (selector) => document.querySelectorAll(selector);
-
-
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (char) => {
-    const map = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
+  async function api(url, options = {}) {
+    const headers = {
+      ...(options.headers || {})
     };
 
-    return map[char];
-  });
-}
-
-
-function authHeaders(json = false) {
-  const headers = {};
-
-  if (json) {
-    headers["Content-Type"] = "application/json";
-  }
-
-  if (adminToken) {
-    headers["Authorization"] = `Bearer ${adminToken}`;
-  }
-
-  return headers;
-}
-
-
-async function api(url, options = {}) {
-  const response = await fetch(API_BASE + url, {
-    ...options,
-    headers: {
-      ...authHeaders(Boolean(options.body)),
-      ...(options.headers || {})
+    if (state.adminToken) {
+      headers.Authorization = `Bearer ${state.adminToken}`;
     }
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.error || "Request failed");
-  }
-
-  return data;
-}
-
-
-/* =========================================================
-   TOAST
-   ========================================================= */
-
-function showToast(message, type = "success") {
-  let toast = document.getElementById("adminToast");
-
-  if (!toast) {
-    toast = document.createElement("div");
-    toast.id = "adminToast";
-
-    toast.style.position = "fixed";
-    toast.style.left = "50%";
-    toast.style.bottom = "25px";
-    toast.style.transform = "translateX(-50%)";
-    toast.style.zIndex = "9999";
-    toast.style.padding = "12px 18px";
-    toast.style.borderRadius = "12px";
-    toast.style.fontSize = "13px";
-    toast.style.fontWeight = "700";
-    toast.style.boxShadow = "0 10px 30px rgba(0,0,0,.18)";
-    toast.style.transition = "opacity .2s ease";
-
-    document.body.appendChild(toast);
-  }
-
-  toast.textContent = message;
-
-  toast.style.background =
-    type === "error" ? "#fee2e2" : "#dcfce7";
-
-  toast.style.color =
-    type === "error" ? "#b91c1c" : "#166534";
-
-  toast.style.opacity = "1";
-
-  clearTimeout(window.__adminToastTimer);
-
-  window.__adminToastTimer = setTimeout(() => {
-    toast.style.opacity = "0";
-  }, 3000);
-}
-
-
-/* =========================================================
-   LOGIN
-   ========================================================= */
-
-async function handleAdminLogin(event) {
-  event.preventDefault();
-
-  const username = $("#adminUsername")?.value.trim();
-  const password = $("#adminPassword")?.value;
-
-  if (!username || !password) {
-    showToast("Username aur password enter karo.", "error");
-    return;
-  }
-
-  const button = document.querySelector(
-    "#adminLoginForm button[type='submit']"
-  );
-
-  const originalText = button?.textContent;
-
-  if (button) {
-    button.disabled = true;
-    button.textContent = "Logging in...";
-  }
-
-  try {
-    const data = await api("/admin/login", {
-      method: "POST",
-      body: JSON.stringify({
-        username,
-        password
-      })
-    });
-
-    if (!data.token) {
-      throw new Error("Login token nahi mila.");
-    }
-
-    adminToken = data.token;
-
-    localStorage.setItem(
-      "pm_admin_token",
-      adminToken
-    );
-
-    showAdminDashboard();
-
-    await loadEverything();
-
-    showToast("Admin login successful.");
-
-  } catch (error) {
-    console.error("Admin login error:", error);
-
-    showToast(
-      error.message || "Login failed.",
-      "error"
-    );
-
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = originalText || "Login to Admin Panel";
-    }
-  }
-}
-
-
-/* =========================================================
-   SHOW / HIDE DASHBOARD
-   ========================================================= */
-
-function showAdminDashboard() {
-  const login = $("#adminLogin");
-  const dashboard = $("#adminDashboard");
-
-  if (login) {
-    login.style.display = "none";
-  }
-
-  if (dashboard) {
-    dashboard.style.display = "flex";
-  }
-}
-
-
-function showLoginScreen() {
-  const login = $("#adminLogin");
-  const dashboard = $("#adminDashboard");
-
-  if (login) {
-    login.style.display = "flex";
-  }
-
-  if (dashboard) {
-    dashboard.style.display = "none";
-  }
-}
-
-
-/* =========================================================
-   LOAD EVERYTHING
-   ========================================================= */
-
-async function loadEverything() {
-  try {
-    await Promise.all([
-      loadApps(),
-      loadKeys(),
-      loadNotifications()
-    ]);
-
-  } catch (error) {
-    console.error("Load error:", error);
 
     if (
-      error.message.includes("401") ||
-      error.message.toLowerCase().includes("unauthorized") ||
-      error.message.toLowerCase().includes("token")
+      options.body &&
+      typeof options.body === "object" &&
+      !(options.body instanceof FormData)
     ) {
-      logoutAdmin(false);
+      headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(options.body);
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers
+    });
+
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || "Request failed");
+    }
+
+    return data;
+  }
+
+  function showMessage(message, type = "info") {
+    let box = $("#adminMessage");
+
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "adminMessage";
+      box.className = "status";
+      document.body.prepend(box);
+    }
+
+    box.textContent = message;
+
+    box.className = "status";
+
+    if (type === "success") {
+      box.classList.add("status-success");
+    } else if (type === "error") {
+      box.classList.add("status-error");
+    } else {
+      box.classList.add("status-info");
+    }
+
+    clearTimeout(showMessage.timer);
+
+    showMessage.timer = setTimeout(() => {
+      box.remove();
+    }, 4000);
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function value(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function checked(id) {
+    const el = document.getElementById(id);
+    return !!el?.checked;
+  }
+
+  function setValue(id, val = "") {
+    const el = document.getElementById(id);
+    if (el) el.value = val ?? "";
+  }
+
+  function setChecked(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.checked = !!val;
+  }
+
+  function setDisplay(id, display) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = display;
+  }
+
+  /* =========================================
+     LOGIN
+     ========================================= */
+
+  function showLogin() {
+    setDisplay("loginSection", "flex");
+    setDisplay("adminSection", "none");
+  }
+
+  function showAdmin() {
+    setDisplay("loginSection", "none");
+    setDisplay("adminSection", "block");
+  }
+
+  async function login() {
+    const username = value("adminUsername");
+    const password = value("adminPassword");
+
+    if (!username || !password) {
+      showMessage("Username aur password enter karo.", "error");
       return;
     }
 
-    showToast(
-      error.message || "Data load nahi ho paya.",
-      "error"
-    );
-  }
-}
-
-
-/* =========================================================
-   APPS
-   ========================================================= */
-
-async function loadApps() {
-  const data = await api("/apps/all");
-
-  apps = Array.isArray(data)
-    ? data
-    : data.apps || [];
-
-  updateDashboardStats();
-
-  renderApps();
-
-  populateKeyAppSelect();
-}
-
-
-function updateDashboardStats() {
-  const totalApps = document.getElementById("totalApps");
-  const activeApps = document.getElementById("activeApps");
-
-  if (totalApps) {
-    totalApps.textContent = apps.length;
-  }
-
-  if (activeApps) {
-    activeApps.textContent =
-      apps.filter((app) => app.active).length;
-  }
-}
-
-
-function renderApps() {
-  const container = $("#appsList");
-
-  if (!container) return;
-
-  const search =
-    ($("#appSearch")?.value || "")
-      .trim()
-      .toLowerCase();
-
-  const filteredApps = apps.filter((app) => {
-    const text = [
-      app.name,
-      app.category,
-      app.description
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return text.includes(search);
-  });
-
-  if (!filteredApps.length) {
-    container.innerHTML = `
-      <div class="loading-state">
-        No apps found.
-      </div>
-    `;
-
-    return;
-  }
-
-  container.innerHTML = filteredApps.map((app) => {
-    const logo =
-      app.logoUrl ||
-      app.logo_url ||
-      "/assets/logo.png";
-
-    const active =
-      app.active !== false;
-
-    return `
-      <div class="content-card admin-app-card">
-
-        <div style="
-          display:flex;
-          align-items:center;
-          gap:14px;
-        ">
-
-          <img
-            src="${escapeHtml(logo)}"
-            alt="${escapeHtml(app.name)}"
-            style="
-              width:58px;
-              height:58px;
-              border-radius:14px;
-              object-fit:contain;
-              background:#f1f5f9;
-              padding:6px;
-            "
-            onerror="this.src='/assets/logo.png'"
-          >
-
-          <div style="flex:1;min-width:0;">
-
-            <h3 style="
-              margin:0 0 4px;
-              font-size:17px;
-            ">
-              ${escapeHtml(app.name)}
-            </h3>
-
-            <div style="
-              font-size:12px;
-              color:#64748b;
-            ">
-              ${escapeHtml(app.category || "Education")}
-              ·
-              ${active ? "Active" : "Hidden"}
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <p style="
-          margin:14px 0;
-          color:#64748b;
-          font-size:13px;
-        ">
-          ${escapeHtml(
-            app.description || "No description."
-          )}
-        </p>
-
-
-        <div style="
-          display:flex;
-          gap:8px;
-          flex-wrap:wrap;
-        ">
-
-          <button
-            type="button"
-            class="secondary-btn"
-            onclick="editApp('${app.id}')"
-          >
-            Edit
-          </button>
-
-          <button
-            type="button"
-            class="secondary-btn"
-            onclick="deleteApp('${app.id}')"
-            style="
-              color:#b91c1c;
-              border-color:#fecaca;
-            "
-          >
-            Delete
-          </button>
-
-        </div>
-
-      </div>
-    `;
-  }).join("");
-}
-
-
-function populateKeyAppSelect() {
-  const select = $("#keyAppId");
-
-  if (!select) return;
-
-  select.innerHTML = `
-    <option value="">
-      Select App
-    </option>
-  `;
-
-  apps.forEach((app) => {
-    const option = document.createElement("option");
-
-    option.value = app.id;
-    option.textContent = app.name;
-
-    select.appendChild(option);
-  });
-}
-
-
-/* =========================================================
-   APP MODAL
-   ========================================================= */
-
-function openAppModal(app = null) {
-  const modal = $("#appModal");
-
-  if (!modal) return;
-
-  editingAppId = app?.id || null;
-
-  $("#appModalTitle").textContent =
-    app ? "Edit App" : "Add New App";
-
-  $("#appId").value = app?.id || "";
-
-  $("#appName").value =
-    app?.name || "";
-
-  $("#appCategory").value =
-    app?.category || "Education";
-
-  $("#appLogo").value =
-    app?.logoUrl ||
-    app?.logo_url ||
-    "";
-
-  $("#appDescription").value =
-    app?.description || "";
-
-  $("#appHomeUrl").value =
-    app?.homeUrl ||
-    app?.home_url ||
-    "";
-
-  $("#appPurchaseVideo").value =
-    app?.purchaseVideoUrl ||
-    app?.purchase_video_url ||
-    "";
-
-  $("#appActive").checked =
-    app?.active !== false;
-
-  modal.style.display = "flex";
-}
-
-
-function closeAppModal() {
-  const modal = $("#appModal");
-
-  if (modal) {
-    modal.style.display = "none";
-  }
-
-  editingAppId = null;
-}
-
-
-window.editApp = function (id) {
-  const app = apps.find(
-    (item) => item.id === id
-  );
-
-  if (!app) return;
-
-  openAppModal(app);
-};
-
-
-function clearAppForm() {
-  editingAppId = null;
-
-  $("#appId").value = "";
-  $("#appName").value = "";
-  $("#appCategory").value = "Education";
-  $("#appLogo").value = "";
-  $("#appDescription").value = "";
-  $("#appHomeUrl").value = "";
-  $("#appPurchaseVideo").value = "";
-  $("#appActive").checked = true;
-
-  $("#appModalTitle").textContent =
-    "Add New App";
-}
-
-
-/* =========================================================
-   SAVE APP
-   ========================================================= */
-
-async function saveApp(event) {
-  event.preventDefault();
-
-  const body = {
-    name: $("#appName").value.trim(),
-
-    logoUrl:
-      $("#appLogo").value.trim(),
-
-    description:
-      $("#appDescription").value.trim(),
-
-    homeUrl:
-      $("#appHomeUrl").value.trim(),
-
-    category:
-      $("#appCategory").value.trim() ||
-      "Education",
-
-    purchaseVideoUrl:
-      $("#appPurchaseVideo").value.trim(),
-
-    active:
-      $("#appActive").checked
-  };
-
-  if (!body.name) {
-    showToast("App name enter karo.", "error");
-    return;
-  }
-
-  if (!body.homeUrl) {
-    showToast("App Home URL enter karo.", "error");
-    return;
-  }
-
-  try {
-    if (editingAppId) {
-      await api(`/apps/${editingAppId}`, {
-        method: "PUT",
-        body: JSON.stringify(body)
-      });
-
-      showToast("App updated successfully.");
-
-    } else {
-      await api("/apps", {
+    try {
+      const data = await api("/api/admin/login", {
         method: "POST",
-        body: JSON.stringify(body)
+        body: {
+          username,
+          password
+        }
       });
 
-      showToast("New app added successfully.");
+      if (!data.token) {
+        throw new Error("Login token nahi mila.");
+      }
+
+      state.adminToken = data.token;
+      localStorage.setItem("prep_admin_token", data.token);
+
+      showAdmin();
+      await loadAll();
+
+      showMessage("Admin login successful.", "success");
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  function logout() {
+    state.adminToken = "";
+    localStorage.removeItem("prep_admin_token");
+    showLogin();
+  }
+
+  /* =========================================
+     APP LOAD
+     ========================================= */
+
+  async function loadApps() {
+    const data = await api("/api/apps/all");
+
+    apps = Array.isArray(data)
+      ? data
+      : Array.isArray(data.apps)
+      ? data.apps
+      : [];
+
+    renderApps();
+  }
+
+  function renderApps() {
+    const container =
+      $("#appsList") ||
+      $("#appList") ||
+      $(".apps-list");
+
+    if (!container) return;
+
+    if (!apps.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <strong>No apps found</strong>
+          <span>Abhi koi app add nahi ki gayi.</span>
+        </div>
+      `;
+      return;
     }
 
-    closeAppModal();
-
-    await loadApps();
-
-  } catch (error) {
-    console.error(error);
-
-    showToast(
-      error.message || "App save nahi hua.",
-      "error"
-    );
-  }
-}
-
-
-/* =========================================================
-   DELETE APP
-   ========================================================= */
-
-window.deleteApp = async function (id) {
-  const app = apps.find(
-    (item) => item.id === id
-  );
-
-  const name =
-    app?.name || "this app";
-
-  const confirmed = confirm(
-    `"${name}" ko delete karna hai?\n\nIske saath is app ki keys bhi delete ho sakti hain.`
-  );
-
-  if (!confirmed) return;
-
-  try {
-    await api(`/apps/${id}`, {
-      method: "DELETE"
-    });
-
-    showToast("App deleted.");
-
-    await loadApps();
-    await loadKeys();
-
-  } catch (error) {
-    console.error(error);
-
-    showToast(
-      error.message || "App delete nahi hua.",
-      "error"
-    );
-  }
-};
-
-
-/* =========================================================
-   KEYS
-   ========================================================= */
-
-async function loadKeys() {
-  const data = await api("/keys");
-
-  const keys =
-    Array.isArray(data)
-      ? data
-      : data.keys || [];
-
-  const totalKeys = $("#totalKeys");
-
-  if (totalKeys) {
-    totalKeys.textContent =
-      keys.length;
-  }
-
-  renderKeys(keys);
-}
-
-
-function renderKeys(keys) {
-  const container = $("#keysList");
-
-  if (!container) return;
-
-  const search =
-    ($("#keySearch")?.value || "")
-      .trim()
-      .toLowerCase();
-
-  const filtered = keys.filter((key) => {
-    const text = [
-      key.key,
-      key.appName,
-      key.used_by,
-      key.usedBy
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return text.includes(search);
-  });
-
-  if (!filtered.length) {
-    container.innerHTML = `
-      <div class="loading-state">
-        No keys found.
-      </div>
-    `;
-
-    return;
-  }
-
-  container.innerHTML = filtered.map((item) => {
-
-    const used =
-      Boolean(item.used_by || item.usedBy);
-
-    return `
-      <div style="
-        padding:13px 0;
-        border-bottom:1px solid #e5e7eb;
-      ">
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:10px;
-          align-items:center;
-        ">
-
-          <code style="
-            font-size:12px;
-            word-break:break-all;
-          ">
-            ${escapeHtml(item.key)}
-          </code>
-
-          <span style="
-            font-size:11px;
-            font-weight:700;
-            color:${used ? "#b91c1c" : "#15803d"};
-          ">
-            ${used ? "USED" : "AVAILABLE"}
-          </span>
-
-        </div>
-
-      </div>
-    `;
-
-  }).join("");
-}
-
-
-async function generateKeys(event) {
-  event.preventDefault();
-
-  const appId =
-    $("#keyAppId").value;
-
-  const count =
-    Number($("#keyCount").value);
-
-  if (!appId) {
-    showToast("App select karo.", "error");
-    return;
-  }
-
-  if (!count || count < 1) {
-    showToast("Valid key count enter karo.", "error");
-    return;
-  }
-
-  try {
-    const data = await api(
-      "/keys/generate",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          appId,
-          count
-        })
-      }
-    );
-
-    const generated =
-      data.keys || [];
-
-    $("#generatedKeys").value =
-      generated.join("\n");
-
-    $("#keysResultModal").style.display =
-      "flex";
-
-    await loadKeys();
-
-    showToast(
-      `${generated.length} keys generated.`
-    );
-
-  } catch (error) {
-    console.error(error);
-
-    showToast(
-      error.message || "Keys generate nahi hui.",
-      "error"
-    );
-  }
-}
-
-
-/* =========================================================
-   COPY GENERATED KEYS
-   ========================================================= */
-
-async function copyGeneratedKeys() {
-  const textarea =
-    $("#generatedKeys");
-
-  if (!textarea) return;
-
-  try {
-    await navigator.clipboard.writeText(
-      textarea.value
-    );
-
-    showToast("All keys copied.");
-
-  } catch (error) {
-    textarea.select();
-    document.execCommand("copy");
-
-    showToast("All keys copied.");
-  }
-}
-
-
-/* =========================================================
-   NOTIFICATIONS
-   ========================================================= */
-
-async function loadNotifications() {
-  const data =
-    await api("/notifications");
-
-  const notifications =
-    Array.isArray(data)
-      ? data
-      : data.notifications || [];
-
-  const total =
-    $("#totalNotifications");
-
-  if (total) {
-    total.textContent =
-      notifications.length;
-  }
-
-  renderNotifications(
-    notifications
-  );
-}
-
-
-function renderNotifications(
-  notifications
-) {
-  const container =
-    $("#notificationsList");
-
-  if (!container) return;
-
-  if (!notifications.length) {
-    container.innerHTML = `
-      <div class="loading-state">
-        No notifications published yet.
-      </div>
-    `;
-
-    return;
-  }
-
-  container.innerHTML =
-    notifications.map((item) => `
-      <div
-        style="
-          padding:15px 0;
-          border-bottom:1px solid #e5e7eb;
-        "
-      >
-
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          gap:12px;
-        ">
-
-          <div>
-
-            <strong style="
-              font-size:15px;
-            ">
-              ${escapeHtml(item.title)}
-            </strong>
-
-            <p style="
-              margin:6px 0 0;
-              color:#64748b;
-              font-size:13px;
-              white-space:pre-wrap;
-            ">
-              ${escapeHtml(item.message)}
-            </p>
-
+    container.innerHTML = apps
+      .map((app) => {
+        const logo =
+          app.logo_url ||
+          "/assets/logo.png";
+
+        return `
+          <div class="app-item">
+            <div class="app-item-left">
+              <img
+                class="app-item-logo"
+                src="${escapeHtml(logo)}"
+                alt=""
+                onerror="this.src='/assets/logo.png'"
+              >
+
+              <div class="app-item-info">
+                <h3 class="app-item-name">
+                  ${escapeHtml(app.name)}
+                </h3>
+
+                <p class="app-item-description">
+                  ${escapeHtml(app.description || "No description")}
+                </p>
+
+                ${
+                  app.active
+                    ? `<span class="badge badge-active">Active</span>`
+                    : `<span class="badge badge-inactive">Inactive</span>`
+                }
+              </div>
+            </div>
+
+            <div class="app-item-actions">
+              <button
+                class="btn btn-secondary btn-small"
+                data-edit-app="${escapeHtml(app.id)}"
+              >
+                Edit
+              </button>
+
+              <button
+                class="btn btn-danger btn-small"
+                data-delete-app="${escapeHtml(app.id)}"
+              >
+                Delete
+              </button>
+            </div>
           </div>
-
-          <button
-            type="button"
-            class="secondary-btn"
-            onclick="deleteNotification('${item.id}')"
-            style="
-              color:#b91c1c;
-              border-color:#fecaca;
-              white-space:nowrap;
-            "
-          >
-            Delete
-          </button>
-
-        </div>
-
-      </div>
-    `).join("");
-}
-
-
-async function publishNotification(event) {
-  event.preventDefault();
-
-  const title =
-    $("#notificationTitle").value.trim();
-
-  const message =
-    $("#notificationMessage").value.trim();
-
-  if (!title || !message) {
-    showToast(
-      "Title aur message dono enter karo.",
-      "error"
-    );
-
-    return;
-  }
-
-  try {
-    await api("/notifications", {
-      method: "POST",
-      body: JSON.stringify({
-        title,
-        message
+        `;
       })
+      .join("");
+
+    container.querySelectorAll("[data-edit-app]").forEach((button) => {
+      button.addEventListener("click", () => {
+        editApp(button.dataset.editApp);
+      });
     });
 
-    $("#notificationTitle").value = "";
-    $("#notificationMessage").value = "";
-
-    await loadNotifications();
-
-    showToast(
-      "Notification published successfully."
-    );
-
-  } catch (error) {
-    console.error(error);
-
-    showToast(
-      error.message ||
-      "Notification publish nahi hua.",
-      "error"
-    );
+    container.querySelectorAll("[data-delete-app]").forEach((button) => {
+      button.addEventListener("click", () => {
+        deleteApp(button.dataset.deleteApp);
+      });
+    });
   }
-}
 
+  /* =========================================
+     APP FORM
+     ========================================= */
 
-window.deleteNotification =
-  async function (id) {
+  function clearAppForm() {
+    editingAppId = null;
 
-    if (
-      !confirm(
-        "Is notification ko delete karna hai?"
-      )
-    ) {
+    [
+      "appName",
+      "appLogoUrl",
+      "homeUrl",
+      "appCategory",
+      "appDescription",
+      "purchaseVideoUrl",
+      "headerLogoUrl",
+      "headerName",
+      "headerBadge",
+      "batchListUrl",
+      "batchOpenUrl"
+    ].forEach((id) => setValue(id, ""));
+
+    setChecked("appActive", true);
+    setChecked("headerEnabled", false);
+
+    setValue("appTheme", "dark");
+    setValue("aiTheme", "dark");
+    setValue("communityTheme", "dark");
+    setValue("headerSize", "100");
+
+    updateHeaderSizeLabel();
+
+    const title = $("#appFormTitle");
+    if (title) title.textContent = "Add App";
+
+    const saveButton =
+      $("#saveAppBtn") ||
+      $("#saveApp");
+
+    if (saveButton) {
+      saveButton.textContent = "Add App";
+    }
+
+    const preview = $("#headerLogoPreview");
+    if (preview) {
+      preview.removeAttribute("src");
+      preview.style.display = "none";
+    }
+
+    const file = $("#headerLogoFile");
+    if (file) file.value = "";
+  }
+
+  function editApp(id) {
+    const app = apps.find((item) => String(item.id) === String(id));
+
+    if (!app) {
+      showMessage("App nahi mili.", "error");
+      return;
+    }
+
+    editingAppId = app.id;
+
+    setValue("appName", app.name);
+    setValue("appLogoUrl", app.logo_url);
+    setValue("homeUrl", app.home_url);
+    setValue("appCategory", app.category);
+    setValue("appDescription", app.description);
+    setValue("purchaseVideoUrl", app.purchase_video_url);
+
+    setValue("appTheme", app.app_theme || "dark");
+    setValue("aiTheme", app.ai_theme || "dark");
+    setValue(
+      "communityTheme",
+      app.community_theme || "dark"
+    );
+
+    setChecked(
+      "headerEnabled",
+      app.header_enabled
+    );
+
+    setValue(
+      "headerLogoUrl",
+      app.header_logo_url
+    );
+
+    setValue(
+      "headerName",
+      app.header_name
+    );
+
+    setValue(
+      "headerBadge",
+      app.header_badge
+    );
+
+    setValue(
+      "headerSize",
+      app.header_size || 100
+    );
+
+    setValue(
+      "batchListUrl",
+      app.batch_list_url
+    );
+
+    setValue(
+      "batchOpenUrl",
+      app.batch_open_url
+    );
+
+    setChecked(
+      "appActive",
+      app.active !== false
+    );
+
+    updateHeaderSizeLabel();
+
+    const title = $("#appFormTitle");
+    if (title) title.textContent = "Edit App";
+
+    const saveButton =
+      $("#saveAppBtn") ||
+      $("#saveApp");
+
+    if (saveButton) {
+      saveButton.textContent = "Update App";
+    }
+
+    const preview = $("#headerLogoPreview");
+
+    if (preview && app.header_logo_url) {
+      preview.src = app.header_logo_url;
+      preview.style.display = "block";
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+  async function saveApp() {
+    const name = value("appName");
+
+    if (!name) {
+      showMessage("App name required hai.", "error");
+      return;
+    }
+
+    const payload = {
+      name,
+      logo_url: value("appLogoUrl"),
+      home_url: value("homeUrl"),
+      category: value("appCategory"),
+      description: value("appDescription"),
+      purchase_video_url: value("purchaseVideoUrl"),
+      active: checked("appActive"),
+
+      app_theme: value("appTheme") || "dark",
+      ai_theme: value("aiTheme") || "dark",
+      community_theme:
+        value("communityTheme") || "dark",
+
+      header_enabled: checked("headerEnabled"),
+      header_logo_url: value("headerLogoUrl"),
+      header_name: value("headerName"),
+      header_badge: value("headerBadge"),
+
+      header_size:
+        Number(value("headerSize")) || 100,
+
+      batch_list_url: value("batchListUrl"),
+      batch_open_url: value("batchOpenUrl")
+    };
+
+    try {
+      if (editingAppId) {
+        await api(`/api/apps/${editingAppId}`, {
+          method: "PUT",
+          body: payload
+        });
+
+        showMessage(
+          "App successfully update ho gayi.",
+          "success"
+        );
+      } else {
+        await api("/api/apps", {
+          method: "POST",
+          body: payload
+        });
+
+        showMessage(
+          "App successfully add ho gayi.",
+          "success"
+        );
+      }
+
+      clearAppForm();
+      await loadApps();
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  async function deleteApp(id) {
+    const app = apps.find(
+      (item) => String(item.id) === String(id)
+    );
+
+    if (!app) return;
+
+    const confirmed = confirm(
+      `"${app.name}" ko delete karna hai?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await api(`/api/apps/${id}`, {
+        method: "DELETE"
+      });
+
+      if (String(editingAppId) === String(id)) {
+        clearAppForm();
+      }
+
+      await loadApps();
+
+      showMessage(
+        "App delete ho gayi.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  /* =========================================
+     HEADER LOGO UPLOAD
+     ========================================= */
+
+  async function uploadHeaderLogo() {
+    const input = $("#headerLogoFile");
+
+    if (!input || !input.files?.length) {
+      showMessage(
+        "Pehle header logo file select karo.",
+        "error"
+      );
+      return;
+    }
+
+    const file = input.files[0];
+
+    if (!file.type.startsWith("image/")) {
+      showMessage(
+        "Sirf image file upload karo.",
+        "error"
+      );
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage(
+        "Image maximum 5MB ki ho sakti hai.",
+        "error"
+      );
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      showMessage("Logo upload ho raha hai...");
+
+      const data = await api(
+        "/api/admin/upload-header-logo",
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      if (!data.url) {
+        throw new Error(
+          "Upload URL nahi mili."
+        );
+      }
+
+      setValue(
+        "headerLogoUrl",
+        data.url
+      );
+
+      const preview =
+        $("#headerLogoPreview");
+
+      if (preview) {
+        preview.src = data.url;
+        preview.style.display = "block";
+      }
+
+      showMessage(
+        "Header logo upload ho gaya.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  /* =========================================
+     HEADER SIZE
+     ========================================= */
+
+  function updateHeaderSizeLabel() {
+    const slider = $("#headerSize");
+    const label =
+      $("#headerSizeValue") ||
+      $("#headerSizeLabel");
+
+    if (!slider || !label) return;
+
+    label.textContent =
+      `${slider.value}%`;
+  }
+
+  /* =========================================
+     KEYS
+     ========================================= */
+
+  async function loadKeys(appId) {
+    if (!appId) return;
+
+    const container =
+      $("#keysList") ||
+      $("#keyList") ||
+      $(".key-list");
+
+    if (!container) return;
+
+    try {
+      const data = await api(
+        `/api/keys?appId=${encodeURIComponent(appId)}`
+      );
+
+      const keys = Array.isArray(data)
+        ? data
+        : Array.isArray(data.keys)
+        ? data.keys
+        : [];
+
+      if (!keys.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <strong>No keys</strong>
+            <span>Is app ke liye abhi koi key nahi hai.</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = keys
+        .map(
+          (key) => `
+            <div class="key-item">
+              <div>
+                <div class="key-value">
+                  ${escapeHtml(key.key)}
+                </div>
+
+                <div class="key-meta">
+                  ${
+                    key.active
+                      ? "Active"
+                      : "Inactive"
+                  }
+                  ${
+                    key.used_by
+                      ? ` • Used by ${escapeHtml(
+                          key.used_by
+                        )}`
+                      : ""
+                  }
+                </div>
+              </div>
+
+              <button
+                class="btn btn-danger btn-small"
+                data-delete-key="${escapeHtml(
+                  key.id
+                )}"
+              >
+                Delete
+              </button>
+            </div>
+          `
+        )
+        .join("");
+
+      container
+        .querySelectorAll("[data-delete-key]")
+        .forEach((button) => {
+          button.addEventListener(
+            "click",
+            () => deleteKey(button.dataset.deleteKey)
+          );
+        });
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  async function generateKeys() {
+    const appId =
+      value("keyAppId") ||
+      value("selectedAppId") ||
+      value("appKeyApp");
+
+    const count =
+      Number(
+        value("keyCount") ||
+        value("generateKeyCount") ||
+        "1"
+      ) || 1;
+
+    if (!appId) {
+      showMessage(
+        "Pehle app select karo.",
+        "error"
+      );
+      return;
+    }
+
+    if (count < 1 || count > 500) {
+      showMessage(
+        "Keys 1 se 500 ke beech honi chahiye.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const data = await api(
+        "/api/keys/generate",
+        {
+          method: "POST",
+          body: {
+            app_id: appId,
+            count
+          }
+        }
+      );
+
+      const keys =
+        data.keys ||
+        data.generated ||
+        [];
+
+      if (keys.length) {
+        const text = keys
+          .map((item) =>
+            typeof item === "string"
+              ? item
+              : item.key
+          )
+          .filter(Boolean)
+          .join("\n");
+
+        const output =
+          $("#generatedKeys") ||
+          $("#keyOutput");
+
+        if (output) {
+          if ("value" in output) {
+            output.value = text;
+          } else {
+            output.textContent = text;
+          }
+        }
+
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {}
+      }
+
+      await loadKeys(appId);
+
+      showMessage(
+        `${keys.length || count} key generate ho gayi.`,
+        "success"
+      );
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  async function deleteKey(id) {
+    if (!id) return;
+
+    if (!confirm("Is key ko delete karna hai?")) {
+      return;
+    }
+
+    try {
+      await api(`/api/keys/${id}`, {
+        method: "DELETE"
+      });
+
+      const appId =
+        value("keyAppId") ||
+        value("selectedAppId") ||
+        value("appKeyApp");
+
+      if (appId) {
+        await loadKeys(appId);
+      }
+
+      showMessage(
+        "Key delete ho gayi.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  /* =========================================
+     NOTIFICATIONS
+     ========================================= */
+
+  async function loadNotifications() {
+    const container =
+      $("#notificationsList") ||
+      $("#notificationList") ||
+      $(".notification-list");
+
+    if (!container) return;
+
+    try {
+      const data = await api(
+        "/api/notifications"
+      );
+
+      const notifications =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data.notifications)
+          ? data.notifications
+          : [];
+
+      if (!notifications.length) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <strong>No notifications</strong>
+            <span>Abhi koi notification nahi hai.</span>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = notifications
+        .map(
+          (item) => `
+            <div class="notification-item">
+              <div class="notification-title">
+                ${escapeHtml(item.title)}
+              </div>
+
+              <div class="notification-message">
+                ${escapeHtml(item.message)}
+              </div>
+
+              <div class="notification-date">
+                ${item.created_at
+                  ? new Date(
+                      item.created_at
+                    ).toLocaleString()
+                  : ""}
+              </div>
+
+              <div class="button-row">
+                <button
+                  class="btn btn-danger btn-small"
+                  data-delete-notification="${escapeHtml(
+                    item.id
+                  )}"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          `
+        )
+        .join("");
+
+      container
+        .querySelectorAll(
+          "[data-delete-notification]"
+        )
+        .forEach((button) => {
+          button.addEventListener(
+            "click",
+            () =>
+              deleteNotification(
+                button.dataset.deleteNotification
+              )
+          );
+        });
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  async function createNotification() {
+    const title = value("notificationTitle");
+    const message = value("notificationMessage");
+
+    if (!title || !message) {
+      showMessage(
+        "Title aur message dono required hain.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      await api("/api/notifications", {
+        method: "POST",
+        body: {
+          title,
+          message
+        }
+      });
+
+      setValue("notificationTitle", "");
+      setValue("notificationMessage", "");
+
+      await loadNotifications();
+
+      showMessage(
+        "Notification add ho gaya.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(error.message, "error");
+    }
+  }
+
+  async function deleteNotification(id) {
+    if (!confirm("Notification delete karna hai?")) {
       return;
     }
 
     try {
       await api(
-        `/notifications/${id}`,
+        `/api/notifications/${id}`,
         {
           method: "DELETE"
         }
@@ -979,381 +941,270 @@ window.deleteNotification =
 
       await loadNotifications();
 
-      showToast(
-        "Notification deleted."
+      showMessage(
+        "Notification delete ho gaya.",
+        "success"
       );
-
     } catch (error) {
-      console.error(error);
-
-      showToast(
-        error.message ||
-        "Notification delete nahi hua.",
-        "error"
-      );
+      showMessage(error.message, "error");
     }
-  };
-
-
-/* =========================================================
-   SECTION NAVIGATION
-   ========================================================= */
-
-function openSection(sectionName) {
-  $$("[data-admin-section]").forEach(
-    (section) => {
-      section.style.display =
-        section.dataset.adminSection === sectionName
-          ? "block"
-          : "none";
-    }
-  );
-
-  $$(".admin-nav-item").forEach(
-    (button) => {
-      button.classList.toggle(
-        "active",
-        button.dataset.section === sectionName
-      );
-    }
-  );
-
-  closeMobileSidebar();
-}
-
-
-/* =========================================================
-   SIDEBAR
-   ========================================================= */
-
-function toggleMobileSidebar() {
-  const sidebar =
-    $("#adminSidebar");
-
-  const overlay =
-    $("#adminOverlay");
-
-  sidebar?.classList.toggle("open");
-  overlay?.classList.toggle("active");
-}
-
-
-function closeMobileSidebar() {
-  $("#adminSidebar")
-    ?.classList.remove("open");
-
-  $("#adminOverlay")
-    ?.classList.remove("active");
-}
-
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-function logoutAdmin(reload = true) {
-  adminToken = "";
-
-  localStorage.removeItem(
-    "pm_admin_token"
-  );
-
-  if (reload) {
-    location.reload();
-  } else {
-    showLoginScreen();
   }
-}
 
+  /* =========================================
+     APP SELECT DROPDOWNS
+     ========================================= */
 
-/* =========================================================
-   THEME
-   ========================================================= */
+  function populateAppSelects() {
+    const selects = [
+      $("#keyAppId"),
+      $("#selectedAppId"),
+      $("#appKeyApp")
+    ].filter(Boolean);
 
-function applyTheme(theme) {
-  document.body.classList.toggle(
-    "dark",
-    theme === "dark"
-  );
+    selects.forEach((select) => {
+      const current = select.value;
 
-  const buttons = [
-    $("#adminThemeToggle"),
-    $("#themeToggle")
-  ];
+      select.innerHTML = `
+        <option value="">Select App</option>
+        ${apps
+          .map(
+            (app) => `
+              <option value="${escapeHtml(
+                app.id
+              )}">
+                ${escapeHtml(app.name)}
+              </option>
+            `
+          )
+          .join("")}
+      `;
 
-  buttons.forEach((button) => {
-    if (button) {
-      button.textContent =
-        theme === "dark"
-          ? "☀️"
-          : "🌙";
+      if (
+        apps.some(
+          (app) =>
+            String(app.id) === String(current)
+        )
+      ) {
+        select.value = current;
+      }
+    });
+  }
+
+  /* =========================================
+     LOAD ALL
+     ========================================= */
+
+  async function loadAll() {
+    await loadApps();
+    populateAppSelects();
+    await loadNotifications();
+
+    const appId =
+      value("keyAppId") ||
+      value("selectedAppId") ||
+      value("appKeyApp");
+
+    if (appId) {
+      await loadKeys(appId);
     }
-  });
-}
+  }
 
+  /* =========================================
+     EVENT LISTENERS
+     ========================================= */
 
-function toggleTheme() {
-  const current =
-    localStorage.getItem(
-      "pm_admin_theme"
-    ) || "light";
+  function bindEvents() {
+    const loginButton =
+      $("#adminLoginBtn") ||
+      $("#loginBtn");
 
-  const next =
-    current === "dark"
-      ? "light"
-      : "dark";
-
-  localStorage.setItem(
-    "pm_admin_theme",
-    next
-  );
-
-  applyTheme(next);
-}
-
-
-/* =========================================================
-   EVENT LISTENERS
-   ========================================================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  async () => {
-
-    /* Theme */
-
-    const savedTheme =
-      localStorage.getItem(
-        "pm_admin_theme"
-      ) || "light";
-
-    applyTheme(savedTheme);
-
-
-    /* Login */
-
-    const loginForm =
-      $("#adminLoginForm");
-
-    if (loginForm) {
-      loginForm.addEventListener(
-        "submit",
-        handleAdminLogin
+    if (loginButton) {
+      loginButton.addEventListener(
+        "click",
+        login
       );
     }
 
+    const logoutButton =
+      $("#adminLogoutBtn") ||
+      $("#logoutBtn");
 
-    /* Navigation */
-
-    $$(".admin-nav-item").forEach(
-      (button) => {
-        button.addEventListener(
-          "click",
-          () => {
-            openSection(
-              button.dataset.section
-            );
-          }
-        );
-      }
-    );
-
-
-    /* Quick actions */
-
-    $$(".quick-action").forEach(
-      (button) => {
-        button.addEventListener(
-          "click",
-          () => {
-
-            const section =
-              button.dataset.section;
-
-            if (section) {
-              openSection(section);
-            }
-
-            if (
-              button.id === "addAppBtn"
-            ) {
-              openAppModal();
-            }
-          }
-        );
-      }
-    );
-
-
-    /* New App */
-
-    $("#newAppBtn")
-      ?.addEventListener(
+    if (logoutButton) {
+      logoutButton.addEventListener(
         "click",
-        () => openAppModal()
+        logout
       );
+    }
 
+    const saveButton =
+      $("#saveAppBtn") ||
+      $("#saveApp");
 
-    /* Close App Modal */
-
-    $("#closeAppModal")
-      ?.addEventListener(
+    if (saveButton) {
+      saveButton.addEventListener(
         "click",
-        closeAppModal
-      );
-
-    $("#cancelApp")
-      ?.addEventListener(
-        "click",
-        closeAppModal
-      );
-
-
-    /* App Form */
-
-    $("#appForm")
-      ?.addEventListener(
-        "submit",
         saveApp
       );
-
-
-    /* App Search */
-
-    $("#appSearch")
-      ?.addEventListener(
-        "input",
-        renderApps
-      );
-
-
-    /* Key Search */
-
-    $("#keySearch")
-      ?.addEventListener(
-        "input",
-        loadKeys
-      );
-
-
-    /* Generate Keys */
-
-    $("#keyGeneratorForm")
-      ?.addEventListener(
-        "submit",
-        generateKeys
-      );
-
-
-    /* Keys Modal */
-
-    $("#closeKeysModal")
-      ?.addEventListener(
-        "click",
-        () => {
-          $("#keysResultModal").style.display =
-            "none";
-        }
-      );
-
-
-    $("#closeKeysModalBottom")
-      ?.addEventListener(
-        "click",
-        () => {
-          $("#keysResultModal").style.display =
-            "none";
-        }
-      );
-
-
-    $("#copyGeneratedKeys")
-      ?.addEventListener(
-        "click",
-        copyGeneratedKeys
-      );
-
-
-    /* Notifications */
-
-    $("#notificationForm")
-      ?.addEventListener(
-        "submit",
-        publishNotification
-      );
-
-
-    /* Theme */
-
-    $("#adminThemeToggle")
-      ?.addEventListener(
-        "click",
-        toggleTheme
-      );
-
-    $("#themeToggle")
-      ?.addEventListener(
-        "click",
-        toggleTheme
-      );
-
-
-    /* Logout */
-
-    $("#adminLogout")
-      ?.addEventListener(
-        "click",
-        () => logoutAdmin(true)
-      );
-
-    $("#adminLogoutTop")
-      ?.addEventListener(
-        "click",
-        () => logoutAdmin(true)
-      );
-
-
-    /* Mobile menu */
-
-    $("#adminMenuToggle")
-      ?.addEventListener(
-        "click",
-        toggleMobileSidebar
-      );
-
-    $("#adminOverlay")
-      ?.addEventListener(
-        "click",
-        closeMobileSidebar
-      );
-
-
-    /* Existing login */
-
-    if (adminToken) {
-
-      try {
-
-        await api("/me");
-
-        showAdminDashboard();
-
-        await loadEverything();
-
-      } catch (error) {
-
-        console.log(
-          "Saved admin session invalid."
-        );
-
-        logoutAdmin(false);
-      }
-
-    } else {
-
-      showLoginScreen();
-
     }
 
+    const newAppButton =
+      $("#newAppBtn") ||
+      $("#addNewAppBtn");
+
+    if (newAppButton) {
+      newAppButton.addEventListener(
+        "click",
+        clearAppForm
+      );
+    }
+
+    const uploadButton =
+      $("#uploadHeaderLogoBtn") ||
+      $("#uploadLogoBtn");
+
+    if (uploadButton) {
+      uploadButton.addEventListener(
+        "click",
+        uploadHeaderLogo
+      );
+    }
+
+    const sizeSlider =
+      $("#headerSize");
+
+    if (sizeSlider) {
+      sizeSlider.addEventListener(
+        "input",
+        updateHeaderSizeLabel
+      );
+    }
+
+    const generateButton =
+      $("#generateKeysBtn") ||
+      $("#generateKeyBtn");
+
+    if (generateButton) {
+      generateButton.addEventListener(
+        "click",
+        generateKeys
+      );
+    }
+
+    const notificationButton =
+      $("#createNotificationBtn") ||
+      $("#addNotificationBtn");
+
+    if (notificationButton) {
+      notificationButton.addEventListener(
+        "click",
+        createNotification
+      );
+    }
+
+    [
+      $("#keyAppId"),
+      $("#selectedAppId"),
+      $("#appKeyApp")
+    ]
+      .filter(Boolean)
+      .forEach((select) => {
+        select.addEventListener(
+          "change",
+          () => loadKeys(select.value)
+        );
+      });
+
+    const passwordInput =
+      $("#adminPassword");
+
+    if (passwordInput) {
+      passwordInput.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.key === "Enter") {
+            login();
+          }
+        }
+      );
+    }
+
+    const fileInput =
+      $("#headerLogoFile");
+
+    if (fileInput) {
+      fileInput.addEventListener(
+        "change",
+        () => {
+          const file = fileInput.files?.[0];
+
+          if (!file) return;
+
+          const preview =
+            $("#headerLogoPreview");
+
+          if (
+            preview &&
+            file.type.startsWith("image/")
+          ) {
+            preview.src =
+              URL.createObjectURL(file);
+
+            preview.style.display =
+              "block";
+          }
+        }
+      );
+    }
   }
-);
+
+  /* =========================================
+     START
+     ========================================= */
+
+  async function init() {
+    bindEvents();
+    updateHeaderSizeLabel();
+
+    if (!state.adminToken) {
+      showLogin();
+      return;
+    }
+
+    try {
+      await api("/api/admin/me");
+      showAdmin();
+      await loadAll();
+    } catch {
+      state.adminToken = "";
+      localStorage.removeItem(
+        "prep_admin_token"
+      );
+      showLogin();
+    }
+  }
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    init
+  );
+
+  /* =========================================
+     GLOBAL HELPERS
+     ========================================= */
+
+  window.PrepMasterAdmin = {
+    loadApps,
+    loadAll,
+    loadKeys,
+    clearAppForm,
+    editApp,
+    deleteApp,
+    saveApp,
+    uploadHeaderLogo,
+    generateKeys,
+    loadNotifications,
+    createNotification,
+    deleteNotification,
+    logout
+  };
+})();
