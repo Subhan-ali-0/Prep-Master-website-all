@@ -1,200 +1,284 @@
-/* =========================================================
-   PREP MASTER — HOME PAGE
-   ========================================================= */
+/* =========================================
+   PREP MASTER - HOME APP JS
+   ========================================= */
 
-const $ = (selector) =>
-  document.querySelector(selector);
+(() => {
+  "use strict";
 
+  const $ = (selector) => document.querySelector(selector);
 
-const state = {
-  apps: [],
-  view: "explore",
-  selected: null,
+  let apps = [];
+  let currentTab = "apps";
 
-  token:
-    localStorage.getItem("pm_token") || "",
-
-  unlocked:
-    new Set(
-      JSON.parse(
-        localStorage.getItem("pm_unlocked") || "[]"
-      )
-    )
-};
-
-
-/* =========================================================
-   CLIENT ID
-   ========================================================= */
-
-function clientId() {
-
-  let id =
-    localStorage.getItem(
-      "pm_client_id"
-    );
-
-  if (!id) {
-
-    id =
-      crypto.randomUUID();
-
-    localStorage.setItem(
-      "pm_client_id",
-      id
-    );
-  }
-
-  return id;
-}
-
-
-/* =========================================================
-   HEADERS
-   ========================================================= */
-
-function headers(json = false) {
-
-  const h = {
-    "X-Client-Id": clientId()
+  const state = {
+    token: localStorage.getItem("prep_token") || "",
+    user: null
   };
 
-  if (json) {
-    h["Content-Type"] =
-      "application/json";
-  }
+  /* =========================================
+     API
+     ========================================= */
 
-  if (state.token) {
-    h.Authorization =
-      `Bearer ${state.token}`;
-  }
+  async function api(url, options = {}) {
+    const headers = {
+      ...(options.headers || {})
+    };
 
-  return h;
-}
+    if (state.token) {
+      headers.Authorization = `Bearer ${state.token}`;
+    }
 
+    if (
+      options.body &&
+      typeof options.body === "object" &&
+      !(options.body instanceof FormData)
+    ) {
+      headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(options.body);
+    }
 
-/* =========================================================
-   API
-   ========================================================= */
-
-async function api(url, options = {}) {
-
-  const response =
-    await fetch(url, {
+    const response = await fetch(url, {
       ...options,
-
-      headers: {
-        ...headers(
-          Boolean(options.body)
-        ),
-
-        ...(options.headers || {})
-      }
+      headers
     });
 
+    let data = {};
 
-  const data =
-    await response
-      .json()
-      .catch(() => ({}));
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
 
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        data.message ||
+        "Request failed"
+      );
+    }
 
-  if (!response.ok) {
+    return data;
+  }
 
-    throw new Error(
-      data.error ||
-      "Something went wrong"
+  /* =========================================
+     HELPERS
+     ========================================= */
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function showMessage(message, type = "info") {
+    let box = $("#appMessage");
+
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "appMessage";
+
+      Object.assign(box.style, {
+        position: "fixed",
+        top: "78px",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: "9999",
+        maxWidth: "calc(100% - 30px)",
+        padding: "11px 15px",
+        borderRadius: "10px",
+        fontSize: "13px",
+        fontWeight: "700",
+        boxShadow: "0 8px 25px rgba(0,0,0,.12)"
+      });
+
+      document.body.appendChild(box);
+    }
+
+    box.textContent = message;
+
+    box.style.background =
+      type === "error"
+        ? "#fee2e2"
+        : type === "success"
+        ? "#dcfce7"
+        : "#dbeafe";
+
+    box.style.color =
+      type === "error"
+        ? "#b91c1c"
+        : type === "success"
+        ? "#15803d"
+        : "#1d4ed8";
+
+    clearTimeout(showMessage.timer);
+
+    showMessage.timer = setTimeout(() => {
+      box.remove();
+    }, 3500);
+  }
+
+  function getUnlockedApps() {
+    try {
+      return JSON.parse(
+        localStorage.getItem(
+          "prep_unlocked_apps"
+        ) || "[]"
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  function isUnlocked(appId) {
+    return getUnlockedApps().some(
+      (id) => String(id) === String(appId)
     );
   }
 
+  function saveUnlocked(appId) {
+    const unlocked = getUnlockedApps();
 
-  return data;
-}
+    if (
+      !unlocked.some(
+        (id) => String(id) === String(appId)
+      )
+    ) {
+      unlocked.push(appId);
+    }
 
-
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
-
-function esc(value) {
-
-  return String(value ?? "")
-    .replace(
-      /[&<>"']/g,
-      (char) => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      }[char])
+    localStorage.setItem(
+      "prep_unlocked_apps",
+      JSON.stringify(unlocked)
     );
-}
-
-
-/* =========================================================
-   LOAD APPS
-   ========================================================= */
-
-async function loadApps() {
-
-  try {
-
-    state.apps =
-      await api("/api/apps");
-
-    render();
-
-  } catch (error) {
-
-    console.error(error);
-
-    $("#appsGrid").innerHTML = `
-      <div class="empty">
-        ${esc(error.message)}
-      </div>
-    `;
   }
-}
 
+  /* =========================================
+     LOAD USER
+     ========================================= */
 
-/* =========================================================
-   SAVE UNLOCKED
-   ========================================================= */
+  async function loadUser() {
+    if (!state.token) return;
 
-function saveUnlocked() {
+    try {
+      const data = await api("/api/me");
 
-  localStorage.setItem(
-    "pm_unlocked",
-    JSON.stringify(
-      [...state.unlocked]
-    )
-  );
-}
+      state.user =
+        data.user ||
+        data;
 
+      updateAccountUI();
+    } catch {
+      state.token = "";
+      state.user = null;
 
-function isUnlocked(id) {
+      localStorage.removeItem("prep_token");
 
-  return state.unlocked.has(id);
-}
+      updateAccountUI();
+    }
+  }
 
+  function updateAccountUI() {
+    const accountButton =
+      $("#accountBtn");
 
-/* =========================================================
-   RENDER
-   ========================================================= */
+    if (accountButton) {
+      accountButton.textContent =
+        state.user
+          ? `Account (${state.user.username || "User"})`
+          : "Account";
+    }
 
-function render() {
+    const accountName =
+      $("#accountName");
 
-  const search =
-    ($("#search")?.value || "")
-      .trim()
-      .toLowerCase();
+    if (accountName) {
+      accountName.textContent =
+        state.user?.username ||
+        "Guest";
+    }
 
+    const loginButton =
+      $("#accountLoginBtn");
 
-  let list =
-    state.apps.filter(
-      (app) => {
+    if (loginButton) {
+      loginButton.textContent =
+        state.user
+          ? "Logout"
+          : "Login";
+    }
+  }
 
+  /* =========================================
+     LOAD APPS
+     ========================================= */
+
+  async function loadApps() {
+    const container =
+      $("#appsGrid") ||
+      $(".apps-grid");
+
+    if (container) {
+      container.innerHTML = `
+        <div class="loading">
+          Loading apps...
+        </div>
+      `;
+    }
+
+    try {
+      const data = await api("/api/apps");
+
+      apps = Array.isArray(data)
+        ? data
+        : Array.isArray(data.apps)
+        ? data.apps
+        : [];
+
+      renderApps();
+    } catch (error) {
+      if (container) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <strong>Apps load nahi ho paaye</strong>
+            <span>${escapeHtml(
+              error.message
+            )}</span>
+          </div>
+        `;
+      }
+    }
+  }
+
+  function renderApps() {
+    const container =
+      $("#appsGrid") ||
+      $(".apps-grid");
+
+    if (!container) return;
+
+    const searchInput =
+      $("#searchInput") ||
+      $("#appSearch");
+
+    const search =
+      searchInput?.value
+        ?.trim()
+        .toLowerCase() || "";
+
+    let list = apps;
+
+    if (currentTab === "myapps") {
+      list = apps.filter((app) =>
+        isUnlocked(app.id)
+      );
+    }
+
+    if (search) {
+      list = list.filter((app) => {
         const text = [
           app.name,
           app.description,
@@ -204,826 +288,1006 @@ function render() {
           .toLowerCase();
 
         return text.includes(search);
-      }
-    );
+      });
+    }
 
+    if (!list.length) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <strong>
+            ${
+              currentTab === "myapps"
+                ? "No unlocked apps"
+                : "No apps found"
+            }
+          </strong>
 
-  /* MY APPS */
+          <span>
+            ${
+              currentTab === "myapps"
+                ? "Key verify karne ke baad app yahan dikhegi."
+                : "Search change karke dekho."
+            }
+          </span>
+        </div>
+      `;
 
-  if (
-    state.view === "myapps"
-  ) {
+      return;
+    }
 
-    list =
-      list.filter(
-        (app) =>
-          isUnlocked(app.id)
-      );
-  }
+    container.innerHTML = list
+      .map((app) => {
+        const unlocked =
+          isUnlocked(app.id);
 
+        const logo =
+          app.logo_url ||
+          "/assets/logo.png";
 
-  /* TITLE */
-
-  $("#viewTitle").textContent =
-    state.view === "myapps"
-      ? "My Apps"
-      : "Apps";
-
-
-  $("#appCount").textContent =
-    `${list.length} ${
-      list.length === 1
-        ? "app"
-        : "apps"
-    }`;
-
-
-  /* EMPTY */
-
-  $("#empty").classList.toggle(
-    "hidden",
-    list.length !== 0
-  );
-
-
-  /* CARDS */
-
-  $("#appsGrid").innerHTML =
-    list
-      .map(
-        (app) => `
-
-        <article
-          class="card"
-          data-id="${esc(app.id)}"
-        >
-
-          <img
-            class="app-logo"
-            src="${esc(
-              app.logoUrl ||
-              "/assets/logo.png"
-            )}"
-            onerror="
-              this.src='/assets/logo.png'
-            "
-            alt=""
+        return `
+          <article
+            class="app-card"
+            data-app-id="${escapeHtml(app.id)}"
           >
+            <img
+              class="app-logo"
+              src="${escapeHtml(logo)}"
+              alt=""
+              onerror="this.src='/assets/logo.png'"
+            >
 
-
-          <div>
-
-            <h3>
-              ${esc(app.name)}
+            <h3 class="app-name">
+              ${escapeHtml(app.name)}
             </h3>
 
-            <p>
-              ${esc(
+            <p class="app-description">
+              ${escapeHtml(
                 app.description ||
-                "Learning app"
+                "Open this app"
               )}
             </p>
 
-          </div>
+            ${
+              app.category
+                ? `
+                  <span class="app-category">
+                    ${escapeHtml(
+                      app.category
+                    )}
+                  </span>
+                `
+                : ""
+            }
 
-        </article>
-
-      `
-      )
+            ${
+              unlocked
+                ? `
+                  <div style="
+                    margin-top:10px;
+                    color:#16a34a;
+                    font-size:11px;
+                    font-weight:800;
+                  ">
+                    ✓ Unlocked
+                  </div>
+                `
+                : ""
+            }
+          </article>
+        `;
+      })
       .join("");
 
+    container
+      .querySelectorAll("[data-app-id]")
+      .forEach((card) => {
+        card.addEventListener(
+          "click",
+          () => {
+            openApp(card.dataset.appId);
+          }
+        );
+      });
+  }
 
-  /* CLICK */
+  /* =========================================
+     OPEN APP
+     ========================================= */
 
-  document
-    .querySelectorAll(".card")
-    .forEach(
-      (card) => {
+  function openApp(appId) {
+    if (!appId) return;
 
-        card.onclick = () =>
-          openApp(
-            card.dataset.id
-          );
-
-      }
-    );
-}
-
-
-/* =========================================================
-   OPEN APP
-   ========================================================= */
-
-function openApp(id) {
-
-  const app =
-    state.apps.find(
-      (item) =>
-        item.id === id
-    );
-
-
-  if (!app) return;
-
-
-  /*
-    Agar app pehle unlock hai
-    to direct home URL open hoga.
-  */
-
-  if (
-    isUnlocked(id)
-  ) {
-
-    if (app.homeUrl) {
-
+    if (isUnlocked(appId)) {
       window.location.href =
-        app.homeUrl;
+        `/app?appId=${encodeURIComponent(
+          appId
+        )}`;
 
-    } else {
-
-      alert(
-        "Admin has not added an App URL yet."
-      );
+      return;
     }
 
-    return;
+    openKeyModal(appId);
   }
 
+  /* =========================================
+     KEY MODAL
+     ========================================= */
 
-  state.selected = app;
+  function getModal() {
+    let modal =
+      $("#keyModal");
 
+    if (modal) return modal;
 
-  $("#detailName")
-    .textContent =
-    app.name;
+    modal = document.createElement("div");
 
+    modal.id = "keyModal";
+    modal.className = "modal-overlay";
 
-  $("#detailDesc")
-    .textContent =
-    app.description || "";
+    modal.innerHTML = `
+      <div class="modal">
+        <div class="modal-head">
+          <h3>Enter App Key</h3>
 
+          <button
+            type="button"
+            class="modal-close"
+            id="closeKeyModal"
+          >
+            ×
+          </button>
+        </div>
 
-  $("#detailLogo").src =
-    app.logoUrl ||
-    "/assets/logo.png";
+        <div class="form-group">
+          <label>Premium Key</label>
 
+          <input
+            id="appKeyInput"
+            type="text"
+            placeholder="Enter your key"
+            autocomplete="off"
+          >
+        </div>
 
-  $("#keyInput").value =
-    "";
+        <button
+          id="verifyKeyBtn"
+          class="btn btn-primary btn-block"
+        >
+          Verify Key
+        </button>
+      </div>
+    `;
 
+    document.body.appendChild(modal);
 
-  $("#keyStatus")
-    .textContent =
-    "";
+    $("#closeKeyModal")?.addEventListener(
+      "click",
+      closeKeyModal
+    );
 
-
-  $("#verifyBtn")
-    .textContent =
-    "Verify App Key";
-
-
-  const video =
-    app.purchaseVideoUrl;
-
-
-  if (video) {
-
-    $("#purchaseVideo")
-      .href = video;
-
-    $("#purchaseVideo")
-      .classList.remove(
-        "hidden"
-      );
-
-  } else {
-
-    $("#purchaseVideo")
-      .classList.add(
-        "hidden"
-      );
-  }
-
-
-  $("#appModal")
-    .classList.add("show");
-}
-
-
-/* =========================================================
-   VERIFY APP KEY
-   ========================================================= */
-
-async function verify() {
-
-  if (!state.selected)
-    return;
-
-
-  const key =
-    $("#keyInput")
-      .value
-      .trim();
-
-
-  if (!key) {
-
-    $("#keyStatus")
-      .textContent =
-      "Please enter your app key.";
-
-    return;
-  }
-
-
-  const button =
-    $("#verifyBtn");
-
-
-  button.disabled = true;
-
-  button.textContent =
-    "Checking...";
-
-
-  $("#keyStatus")
-    .textContent =
-    "Checking your key...";
-
-
-  try {
-
-    await api(
-      "/api/keys/verify",
-      {
-        method: "POST",
-
-        body:
-          JSON.stringify({
-            appId:
-              state.selected.id,
-
-            key
-          })
+    modal.addEventListener(
+      "click",
+      (event) => {
+        if (
+          event.target === modal
+        ) {
+          closeKeyModal();
+        }
       }
     );
 
-
-    /* SAVE UNLOCK */
-
-    state.unlocked.add(
-      state.selected.id
+    $("#verifyKeyBtn")?.addEventListener(
+      "click",
+      verifyKey
     );
 
-    saveUnlocked();
-
-
-    $("#keyStatus")
-      .textContent =
-      "Access unlocked successfully.";
-
-
-    button.textContent =
-      "Unlocked";
-
-
-    const url =
-      state.selected.homeUrl;
-
-
-    setTimeout(
-      () => {
-
-        $("#appModal")
-          .classList.remove(
-            "show"
-          );
-
-
-        if (url) {
-
-          window.location.href =
-            url;
-
-        } else {
-
-          render();
+    $("#appKeyInput")?.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Enter") {
+          verifyKey();
         }
-
-      },
-      500
+      }
     );
 
-
-  } catch (error) {
-
-    console.error(error);
-
-    $("#keyStatus")
-      .textContent =
-      error.message;
-
-    button.textContent =
-      "Verify App Key";
-
-
-  } finally {
-
-    button.disabled =
-      false;
-  }
-}
-
-
-/* =========================================================
-   SET VIEW
-   ========================================================= */
-
-function setView(view) {
-
-  state.view =
-    view;
-
-
-  /*
-    Menu close
-  */
-
-  $("#drawer")
-    .classList.remove(
-      "open"
-    );
-
-  $("#shade")
-    .classList.remove(
-      "open"
-    );
-
-
-  render();
-}
-
-
-/* =========================================================
-   ACCOUNT
-   ========================================================= */
-
-async function account() {
-
-  $("#accountModal")
-    .classList.add(
-      "show"
-    );
-
-
-  if (!state.token) {
-
-    showLoggedOut();
-
-    return;
+    return modal;
   }
 
+  let selectedAppId = null;
 
-  try {
+  function openKeyModal(appId) {
+    selectedAppId = appId;
 
-    const user =
-      await api(
-        "/api/me"
+    const modal = getModal();
+
+    modal.classList.add("open");
+
+    const input =
+      $("#appKeyInput");
+
+    if (input) {
+      input.value = "";
+      setTimeout(
+        () => input.focus(),
+        100
       );
+    }
+  }
 
+  function closeKeyModal() {
+    const modal =
+      $("#keyModal");
 
-    state.unlocked =
-      new Set(
-        user.unlockedApps ||
-        []
+    if (modal) {
+      modal.classList.remove("open");
+    }
+
+    selectedAppId = null;
+  }
+
+  async function verifyKey() {
+    const input =
+      $("#appKeyInput");
+
+    const button =
+      $("#verifyKeyBtn");
+
+    const key =
+      input?.value.trim() || "";
+
+    if (!selectedAppId) {
+      showMessage(
+        "App select nahi hai.",
+        "error"
       );
+      return;
+    }
 
+    if (!key) {
+      showMessage(
+        "Key enter karo.",
+        "error"
+      );
+      input?.focus();
+      return;
+    }
 
-    saveUnlocked();
+    try {
+      if (button) {
+        button.disabled = true;
+        button.textContent =
+          "Checking...";
+      }
 
-    showAccount(user);
-
-    render();
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    state.token = "";
-
-    localStorage.removeItem(
-      "pm_token"
-    );
-
-    showLoggedOut();
-  }
-}
-
-
-function showAccount(user) {
-
-  $("#accountLoggedOut")
-    .classList.add(
-      "hidden"
-    );
-
-
-  $("#accountLoggedIn")
-    .classList.remove(
-      "hidden"
-    );
-
-
-  $("#accountInfo")
-    .textContent =
-    `Logged in as ${user.username}`;
-
-
-  $("#accountStatus")
-    .textContent = "";
-}
-
-
-function showLoggedOut() {
-
-  $("#accountLoggedOut")
-    .classList.remove(
-      "hidden"
-    );
-
-
-  $("#accountLoggedIn")
-    .classList.add(
-      "hidden"
-    );
-
-
-  $("#accountStatus")
-    .textContent = "";
-}
-
-
-/* =========================================================
-   LOGIN / REGISTER
-   ========================================================= */
-
-async function login(
-  register = false
-) {
-
-  const username =
-    $("#username")
-      .value
-      .trim();
-
-
-  const password =
-    $("#password")
-      .value;
-
-
-  if (!username || !password) {
-
-    $("#accountStatus")
-      .textContent =
-      "Username aur password enter karo.";
-
-    return;
-  }
-
-
-  const button =
-    register
-      ? $("#registerBtn")
-      : $("#loginBtn");
-
-
-  button.disabled = true;
-
-
-  $("#accountStatus")
-    .textContent =
-    register
-      ? "Creating account..."
-      : "Logging in...";
-
-
-  try {
-
-    const data =
-      await api(
-        register
-          ? "/api/auth/register"
-          : "/api/auth/login",
-
+      const data = await api(
+        "/api/keys/verify",
         {
           method: "POST",
-
-          body:
-            JSON.stringify({
-              username,
-              password
-            })
+          body: {
+            app_id: selectedAppId,
+            key
+          }
         }
       );
 
+      if (
+        data.success === false ||
+        data.valid === false
+      ) {
+        throw new Error(
+          data.error ||
+          "Invalid key"
+        );
+      }
 
-    state.token =
-      data.token;
+      saveUnlocked(selectedAppId);
 
+      const appId =
+        selectedAppId;
 
-    localStorage.setItem(
-      "pm_token",
-      state.token
-    );
+      closeKeyModal();
 
+      renderApps();
 
-    state.unlocked =
-      new Set(
-        data.user?.unlockedApps ||
-        []
+      showMessage(
+        "App unlock ho gayi.",
+        "success"
       );
 
+      setTimeout(() => {
+        window.location.href =
+          `/app?appId=${encodeURIComponent(
+            appId
+          )}`;
+      }, 400);
+    } catch (error) {
+      showMessage(
+        error.message ||
+          "Invalid key",
+        "error"
+      );
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent =
+          "Verify Key";
+      }
+    }
+  }
 
-    saveUnlocked();
+  /* =========================================
+     ACCOUNT MODAL
+     ========================================= */
 
+  function getAccountModal() {
+    let modal =
+      $("#accountModal");
 
-    showAccount(
-      data.user
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+
+    modal.id = "accountModal";
+    modal.className = "modal-overlay";
+
+    modal.innerHTML = `
+      <div class="modal">
+
+        <div class="modal-head">
+          <h3>Account</h3>
+
+          <button
+            class="modal-close"
+            id="closeAccountModal"
+          >
+            ×
+          </button>
+        </div>
+
+        <div id="accountContent"></div>
+
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    $("#closeAccountModal")
+      ?.addEventListener(
+        "click",
+        closeAccountModal
+      );
+
+    modal.addEventListener(
+      "click",
+      (event) => {
+        if (
+          event.target === modal
+        ) {
+          closeAccountModal();
+        }
+      }
     );
 
-
-    render();
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    $("#accountStatus")
-      .textContent =
-      error.message;
-
-
-  } finally {
-
-    button.disabled =
-      false;
+    return modal;
   }
-}
 
+  function openAccountModal() {
+    const modal =
+      getAccountModal();
 
-/* =========================================================
-   LOGOUT
-   ========================================================= */
+    const content =
+      $("#accountContent");
 
-function logout() {
+    if (state.user) {
+      content.innerHTML = `
+        <div class="account-info">
+          <strong>
+            ${escapeHtml(
+              state.user.username ||
+                "User"
+            )}
+          </strong>
 
-  state.token = "";
+          <span>
+            Account logged in
+          </span>
+        </div>
 
-  state.unlocked =
-    new Set();
+        <button
+          id="logoutUserBtn"
+          class="btn btn-danger btn-block"
+        >
+          Logout
+        </button>
+      `;
 
+      $("#logoutUserBtn")
+        ?.addEventListener(
+          "click",
+          logout
+        );
+    } else {
+      content.innerHTML = `
+        <div class="form-group">
+          <label>Username</label>
+          <input
+            id="userUsername"
+            type="text"
+            placeholder="Username"
+            autocomplete="username"
+          >
+        </div>
 
-  localStorage.removeItem(
-    "pm_token"
+        <div class="form-group">
+          <label>Password</label>
+          <input
+            id="userPassword"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+          >
+        </div>
+
+        <div class="button-row">
+          <button
+            id="userLoginBtn"
+            class="btn btn-primary"
+            style="flex:1"
+          >
+            Login
+          </button>
+
+          <button
+            id="userRegisterBtn"
+            class="btn btn-secondary"
+            style="flex:1"
+          >
+            Create Account
+          </button>
+        </div>
+      `;
+
+      $("#userLoginBtn")
+        ?.addEventListener(
+          "click",
+          loginUser
+        );
+
+      $("#userRegisterBtn")
+        ?.addEventListener(
+          "click",
+          registerUser
+        );
+    }
+
+    modal.classList.add("open");
+  }
+
+  function closeAccountModal() {
+    $("#accountModal")
+      ?.classList.remove("open");
+  }
+
+  async function loginUser() {
+    const username =
+      $("#userUsername")
+        ?.value.trim();
+
+    const password =
+      $("#userPassword")
+        ?.value || "";
+
+    if (!username || !password) {
+      showMessage(
+        "Username aur password enter karo.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const data = await api(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: {
+            username,
+            password
+          }
+        }
+      );
+
+      if (!data.token) {
+        throw new Error(
+          "Login token nahi mila."
+        );
+      }
+
+      state.token = data.token;
+
+      localStorage.setItem(
+        "prep_token",
+        data.token
+      );
+
+      state.user =
+        data.user || null;
+
+      closeAccountModal();
+      updateAccountUI();
+
+      showMessage(
+        "Login successful.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(
+        error.message,
+        "error"
+      );
+    }
+  }
+
+  async function registerUser() {
+    const username =
+      $("#userUsername")
+        ?.value.trim();
+
+    const password =
+      $("#userPassword")
+        ?.value || "";
+
+    if (!username || !password) {
+      showMessage(
+        "Username aur password enter karo.",
+        "error"
+      );
+      return;
+    }
+
+    if (username.length < 3) {
+      showMessage(
+        "Username kam se kam 3 characters ka hona chahiye.",
+        "error"
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage(
+        "Password kam se kam 6 characters ka hona chahiye.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const data = await api(
+        "/api/auth/register",
+        {
+          method: "POST",
+          body: {
+            username,
+            password
+          }
+        }
+      );
+
+      if (data.token) {
+        state.token =
+          data.token;
+
+        localStorage.setItem(
+          "prep_token",
+          data.token
+        );
+
+        state.user =
+          data.user || null;
+
+        closeAccountModal();
+        updateAccountUI();
+
+        showMessage(
+          "Account create ho gaya.",
+          "success"
+        );
+
+        return;
+      }
+
+      showMessage(
+        "Account create ho gaya. Ab login karo.",
+        "success"
+      );
+    } catch (error) {
+      showMessage(
+        error.message,
+        "error"
+      );
+    }
+  }
+
+  function logout() {
+    state.token = "";
+    state.user = null;
+
+    localStorage.removeItem(
+      "prep_token"
+    );
+
+    closeAccountModal();
+    updateAccountUI();
+
+    showMessage(
+      "Logout successful.",
+      "success"
+    );
+  }
+
+  /* =========================================
+     NOTIFICATIONS
+     ========================================= */
+
+  async function openNotifications() {
+    const modal =
+      document.createElement("div");
+
+    modal.className =
+      "modal-overlay open";
+
+    modal.innerHTML = `
+      <div class="modal">
+
+        <div class="modal-head">
+          <h3>Notifications</h3>
+
+          <button
+            class="modal-close"
+            id="closeNotifications"
+          >
+            ×
+          </button>
+        </div>
+
+        <div id="notificationContent">
+          <div class="loading">
+            Loading...
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    modal
+      .querySelector(
+        "#closeNotifications"
+      )
+      .addEventListener(
+        "click",
+        () => modal.remove()
+      );
+
+    try {
+      const data = await api(
+        "/api/notifications"
+      );
+
+      const notifications =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(
+              data.notifications
+            )
+          ? data.notifications
+          : [];
+
+      const content =
+        modal.querySelector(
+          "#notificationContent"
+        );
+
+      if (!notifications.length) {
+        content.innerHTML = `
+          <div class="empty-state">
+            No notifications.
+          </div>
+        `;
+
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="notification-list">
+          ${notifications
+            .map(
+              (item) => `
+                <div class="notification-item">
+                  <strong>
+                    ${escapeHtml(
+                      item.title
+                    )}
+                  </strong>
+
+                  <p>
+                    ${escapeHtml(
+                      item.message
+                    )}
+                  </p>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+      `;
+    } catch (error) {
+      modal.querySelector(
+        "#notificationContent"
+      ).innerHTML = `
+        <div class="empty-state">
+          ${escapeHtml(
+            error.message
+          )}
+        </div>
+      `;
+    }
+  }
+
+  /* =========================================
+     DRAWER
+     ========================================= */
+
+  function createDrawer() {
+    if ($("#homeDrawer")) {
+      return;
+    }
+
+    const overlay =
+      document.createElement("div");
+
+    overlay.id =
+      "homeDrawerOverlay";
+
+    overlay.className =
+      "drawer-overlay";
+
+    const drawer =
+      document.createElement("aside");
+
+    drawer.id =
+      "homeDrawer";
+
+    drawer.className =
+      "drawer";
+
+    drawer.innerHTML = `
+      <div class="drawer-head">
+        <strong>Prep Master</strong>
+
+        <button
+          class="drawer-close"
+          id="closeDrawer"
+        >
+          ×
+        </button>
+      </div>
+
+      <button
+        class="drawer-item"
+        data-drawer-action="apps"
+      >
+        Apps
+      </button>
+
+      <button
+        class="drawer-item"
+        data-drawer-action="myapps"
+      >
+        My Apps
+      </button>
+
+      <button
+        class="drawer-item"
+        data-drawer-action="telegram"
+      >
+        Join Telegram
+      </button>
+
+      <button
+        class="drawer-item"
+        data-drawer-action="account"
+      >
+        Account
+      </button>
+    `;
+
+    document.body.appendChild(
+      overlay
+    );
+
+    document.body.appendChild(
+      drawer
+    );
+
+    $("#closeDrawer")
+      ?.addEventListener(
+        "click",
+        closeDrawer
+      );
+
+    overlay.addEventListener(
+      "click",
+      closeDrawer
+    );
+
+    drawer
+      .querySelectorAll(
+        "[data-drawer-action]"
+      )
+      .forEach((button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            const action =
+              button.dataset
+                .drawerAction;
+
+            closeDrawer();
+
+            if (action === "apps") {
+              setTab("apps");
+            }
+
+            if (action === "myapps") {
+              setTab("myapps");
+            }
+
+            if (action === "telegram") {
+              window.open(
+                "https://t.me/prepmaster0",
+                "_blank"
+              );
+            }
+
+            if (action === "account") {
+              openAccountModal();
+            }
+          }
+        );
+      });
+  }
+
+  function openDrawer() {
+    createDrawer();
+
+    $("#homeDrawer")
+      ?.classList.add("open");
+
+    $("#homeDrawerOverlay")
+      ?.classList.add("open");
+  }
+
+  function closeDrawer() {
+    $("#homeDrawer")
+      ?.classList.remove("open");
+
+    $("#homeDrawerOverlay")
+      ?.classList.remove("open");
+  }
+
+  /* =========================================
+     TABS
+     ========================================= */
+
+  function setTab(tab) {
+    currentTab = tab;
+
+    document
+      .querySelectorAll(
+        ".tab[data-tab]"
+      )
+      .forEach((button) => {
+        button.classList.toggle(
+          "active",
+          button.dataset.tab === tab
+        );
+      });
+
+    renderApps();
+  }
+
+  /* =========================================
+     EVENTS
+     ========================================= */
+
+  function bindEvents() {
+    createDrawer();
+
+    const menuButton =
+      $("#menuBtn") ||
+      $("#menuButton") ||
+      $(".menu-btn");
+
+    menuButton?.addEventListener(
+      "click",
+      openDrawer
+    );
+
+    const notificationButton =
+      $("#notificationBtn") ||
+      $("#notificationsBtn");
+
+    notificationButton?.addEventListener(
+      "click",
+      openNotifications
+    );
+
+    const accountButton =
+      $("#accountBtn");
+
+    accountButton?.addEventListener(
+      "click",
+      openAccountModal
+    );
+
+    const search =
+      $("#searchInput") ||
+      $("#appSearch");
+
+    search?.addEventListener(
+      "input",
+      renderApps
+    );
+
+    document
+      .querySelectorAll(
+        ".tab[data-tab]"
+      )
+      .forEach((button) => {
+        button.addEventListener(
+          "click",
+          () => {
+            setTab(
+              button.dataset.tab
+            );
+          }
+        );
+      });
+  }
+
+  /* =========================================
+     INIT
+     ========================================= */
+
+  async function init() {
+    bindEvents();
+
+    await loadUser();
+    await loadApps();
+
+    updateAccountUI();
+  }
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    init
   );
 
-
-  localStorage.removeItem(
-    "pm_unlocked"
-  );
-
-
-  showLoggedOut();
-
-  render();
-}
-
-
-/* =========================================================
-   CLOSE MODALS
-   ========================================================= */
-
-function closeModal(id) {
-
-  const modal =
-    document.getElementById(id);
-
-  if (modal) {
-
-    modal.classList.remove(
-      "show"
-    );
-  }
-}
-
-
-/* =========================================================
-   EVENTS
-   ========================================================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
-    /* SEARCH */
-
-    $("#search")
-      .addEventListener(
-        "input",
-        render
-      );
-
-
-    /* VERIFY */
-
-    $("#verifyBtn")
-      .addEventListener(
-        "click",
-        verify
-      );
-
-
-    /* THREE DOT MENU */
-
-    $("#menuBtn")
-      .addEventListener(
-        "click",
-        () => {
-
-          $("#drawer")
-            .classList.add(
-              "open"
-            );
-
-          $("#shade")
-            .classList.add(
-              "open"
-            );
-        }
-      );
-
-
-    /* CLOSE MENU */
-
-    $("#closeMenu")
-      .addEventListener(
-        "click",
-        () => {
-
-          $("#drawer")
-            .classList.remove(
-              "open"
-            );
-
-          $("#shade")
-            .classList.remove(
-              "open"
-            );
-        }
-      );
-
-
-    $("#shade")
-      .addEventListener(
-        "click",
-        () => {
-
-          $("#drawer")
-            .classList.remove(
-              "open"
-            );
-
-          $("#shade")
-            .classList.remove(
-              "open"
-            );
-        }
-      );
-
-
-    /* MENU OPTIONS */
-
-    document
-      .querySelectorAll(
-        "[data-view]"
-      )
-      .forEach(
-        (item) => {
-
-          item.addEventListener(
-            "click",
-            () => {
-
-              setView(
-                item.dataset.view
-              );
-
-            }
-          );
-
-        }
-      );
-
-
-    /* ACCOUNT */
-
-    $("#accountBtn")
-      .addEventListener(
-        "click",
-        account
-      );
-
-
-    /* LOGIN */
-
-    $("#loginBtn")
-      .addEventListener(
-        "click",
-        () =>
-          login(false)
-      );
-
-
-    /* REGISTER */
-
-    $("#registerBtn")
-      .addEventListener(
-        "click",
-        () =>
-          login(true)
-      );
-
-
-    /* LOGOUT */
-
-    $("#logoutBtn")
-      .addEventListener(
-        "click",
-        logout
-      );
-
-
-    /* CLOSE BUTTONS */
-
-    document
-      .querySelectorAll(
-        "[data-close]"
-      )
-      .forEach(
-        (button) => {
-
-          button.addEventListener(
-            "click",
-            () => {
-
-              closeModal(
-                button.dataset.close
-              );
-
-            }
-          );
-
-        }
-      );
-
-
-    /* CLOSE MODAL WHEN CLICKING OUTSIDE */
-
-    document
-      .querySelectorAll(
-        ".modal"
-      )
-      .forEach(
-        (modal) => {
-
-          modal.addEventListener(
-            "click",
-            (event) => {
-
-              if (
-                event.target ===
-                modal
-              ) {
-
-                modal.classList.remove(
-                  "show"
-                );
-              }
-
-            }
-          );
-
-        }
-      );
-
-
-    /* LOAD */
-
-    loadApps();
-
-  }
-);
+  /* =========================================
+     GLOBAL
+     ========================================= */
+
+  window.PrepMasterApp = {
+    loadApps,
+    renderApps,
+    openApp,
+    openAccountModal,
+    closeAccountModal,
+    openDrawer,
+    closeDrawer,
+    setTab,
+    logout
+  };
+})();
