@@ -1,17 +1,19 @@
-/* =========================
-   PREP MASTER - HOME APP CSS
-   ========================= */
+/* =========================================================
+   PREP MASTER — HOME PAGE
+   Clean + Basic + Responsive
+========================================================= */
 
 :root {
-  --bg: #f5f7fb;
+  --bg: #f6f8fc;
   --card: #ffffff;
   --text: #172033;
   --muted: #6b7280;
   --border: #e5e7eb;
   --primary: #2563eb;
   --primary-dark: #1d4ed8;
+  --soft-blue: #eff6ff;
   --danger: #dc2626;
-  --shadow: 0 8px 28px rgba(15, 23, 42, 0.07);
+  --shadow: 0 8px 25px rgba(15, 23, 42, 0.07);
   --radius: 16px;
 }
 
@@ -19,17 +21,19 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  font-family: Inter, Arial, Helvetica, sans-serif;
-  background: var(--bg);
-  color: var(--text);
 }
 
 body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, Arial, Helvetica, sans-serif;
   overflow-x: hidden;
 }
 
@@ -43,440 +47,556 @@ button {
   cursor: pointer;
 }
 
-/* =========================
-   HEADER
-   ========================= */
+a {
+  color: inherit;
+}
 
-.top-header {
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.home-header {
+  width: 100%;
   height: 68px;
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid var(--border);
+  padding: 0 22px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 22px;
+
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--border);
+
   position: sticky;
   top: 0;
   z-index: 100;
+
   backdrop-filter: blur(12px);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.menu-btn {
+  width: 40px;
+  height: 40px;
+
+  border: 1px solid var(--border);
+  border-radius: 11px;
+
+  background: #fff;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+
+  flex-shrink: 0;
+}
+
+.menu-btn span {
+  width: 17px;
+  height: 2px;
+  border-radius: 10px;
+  background: var(--text);
+}
+
+.menu-btn:hover {
+  background: #f8fafc;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
+
+  text-decoration: none;
   min-width: 0;
 }
 
-.brand img {
-  width: 40px;
-  height: 40px;
+.brand-logo {
+  width: 39px;
+  height: 39px;
   object-fit: contain;
   border-radius: 10px;
+  flex-shrink: 0;
 }
 
-.brand-name {
-  font-size: 19px;
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brand-text strong {
+  font-size: 17px;
+  line-height: 1.1;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.brand-text span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .icon-btn {
   width: 40px;
   height: 40px;
+
   border: 1px solid var(--border);
-  background: #fff;
   border-radius: 11px;
+
+  background: #fff;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
-  font-size: 18px;
+
+  font-size: 17px;
 }
 
 .icon-btn:hover {
   background: #f1f5f9;
 }
 
-/* =========================
-   MAIN
-   ========================= */
+.account-btn {
+  min-height: 40px;
+  padding: 0 14px;
 
-.main {
-  width: min(1120px, calc(100% - 28px));
-  margin: 0 auto;
-  padding: 25px 0 50px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: #fff;
+  color: var(--text);
+
+  font-size: 12px;
+  font-weight: 700;
 }
 
-/* =========================
-   HERO
-   ========================= */
+.account-btn:hover {
+  background: #f8fafc;
+}
 
-.hero {
-  background: linear-gradient(135deg, #ffffff, #f7faff);
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.home-main {
+  width: min(1100px, calc(100% - 30px));
+  margin: 0 auto;
+  padding: 25px 0 45px;
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero-section {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.hero-content {
+  padding: 27px;
+
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #f4f8ff 100%
+  );
+
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 27px;
-  margin-bottom: 20px;
+
   box-shadow: var(--shadow);
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: 28px;
-  line-height: 1.2;
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background: var(--soft-blue);
+  color: var(--primary);
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.hero-content h1 {
+  margin: 13px 0 0;
+
+  font-size: 31px;
+  line-height: 1.16;
   font-weight: 850;
+  letter-spacing: -0.7px;
 }
 
-.hero p {
-  margin: 9px 0 0;
+.hero-content p {
+  max-width: 600px;
+
+  margin: 10px 0 0;
+
   color: var(--muted);
+
   font-size: 14px;
+  line-height: 1.6;
 }
 
-/* =========================
+
+/* =========================================================
    SEARCH
-   ========================= */
+========================================================= */
+
+.search-section {
+  margin-bottom: 17px;
+}
 
 .search-box {
+  width: 100%;
   position: relative;
-  margin-bottom: 18px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #8b95a5;
+  font-size: 15px;
+
+  pointer-events: none;
 }
 
 .search-box input {
   width: 100%;
   height: 48px;
+
+  padding: 0 15px 0 43px;
+
   border: 1px solid var(--border);
-  background: #fff;
   border-radius: 13px;
-  padding: 0 16px 0 44px;
+
   outline: none;
+
+  background: #fff;
   color: var(--text);
+
   box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+.search-box input::placeholder {
+  color: #9ca3af;
 }
 
 .search-box input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.09);
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.09);
 }
 
-.search-box::before {
-  content: "⌕";
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-52%);
-  font-size: 22px;
-  color: #8993a3;
-  z-index: 2;
-}
 
-/* =========================
+/* =========================================================
    TABS
-   ========================= */
+========================================================= */
+
+.tabs-section {
+  margin-bottom: 21px;
+}
 
 .tabs {
   display: flex;
+  align-items: center;
   gap: 7px;
-  margin-bottom: 18px;
 }
 
 .tab {
   border: 1px solid var(--border);
   background: #fff;
+
   color: var(--muted);
+
   border-radius: 10px;
-  padding: 9px 15px;
-  font-size: 13px;
-  font-weight: 700;
+
+  padding: 9px 16px;
+
+  font-size: 12px;
+  font-weight: 750;
+
+  transition: 0.18s ease;
+}
+
+.tab:hover {
+  background: #f8fafc;
 }
 
 .tab.active {
   background: var(--primary);
-  color: #fff;
   border-color: var(--primary);
+  color: #fff;
 }
 
-/* =========================
-   SECTION
-   ========================= */
 
-.section-title {
+/* =========================================================
+   APPS SECTION
+========================================================= */
+
+.apps-section {
+  margin-top: 0;
+}
+
+.section-top {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
-  margin: 24px 0 13px;
+
+  margin-bottom: 14px;
 }
 
-.section-title h2 {
+.section-top h2 {
   margin: 0;
-  font-size: 19px;
+
+  font-size: 20px;
+  line-height: 1.25;
   font-weight: 800;
 }
 
-.section-title span {
+.section-top p {
+  margin: 5px 0 0;
+
   color: var(--muted);
+
   font-size: 12px;
+  line-height: 1.4;
 }
 
-/* =========================
+
+/* =========================================================
    APP GRID
-   ========================= */
+========================================================= */
 
 .apps-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
   gap: 15px;
 }
 
 .app-card {
-  background: #fff;
+  min-width: 0;
+
+  padding: 15px;
+
+  background: var(--card);
+
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 15px;
-  min-width: 0;
+
   box-shadow: 0 5px 20px rgba(15, 23, 42, 0.05);
-  transition: 0.2s ease;
+
   cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
 }
 
 .app-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.09);
+
+  border-color: #d6deeb;
+
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.09);
 }
 
 .app-logo {
   width: 58px;
   height: 58px;
-  border-radius: 14px;
-  object-fit: cover;
-  background: #f1f5f9;
+
   display: block;
+
   margin-bottom: 12px;
+
+  object-fit: cover;
+
+  border-radius: 14px;
+
+  background: #f1f5f9;
 }
 
 .app-name {
   margin: 0;
+
+  color: var(--text);
+
   font-size: 15px;
-  font-weight: 800;
   line-height: 1.3;
+  font-weight: 800;
 }
 
 .app-description {
   margin: 6px 0 0;
+
   color: var(--muted);
+
   font-size: 12px;
   line-height: 1.45;
+
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+
   overflow: hidden;
 }
 
 .app-category {
-  display: inline-block;
+  display: inline-flex;
+
   margin-top: 10px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border-radius: 999px;
+
   padding: 4px 8px;
+
+  border-radius: 999px;
+
+  background: var(--soft-blue);
+  color: var(--primary);
+
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
-/* =========================
-   DRAWER
-   ========================= */
 
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.38);
-  z-index: 200;
-  opacity: 0;
-  visibility: hidden;
-  transition: 0.2s ease;
+/* =========================================================
+   LOADING / EMPTY
+========================================================= */
+
+.loading,
+.empty-state {
+  grid-column: 1 / -1;
+
+  width: 100%;
+
+  padding: 40px 15px;
+
+  text-align: center;
+
+  color: var(--muted);
+
+  font-size: 13px;
 }
 
-.drawer-overlay.open {
-  opacity: 1;
-  visibility: visible;
+
+/* =========================================================
+   TELEGRAM
+========================================================= */
+
+.telegram-section {
+  margin-top: 28px;
 }
 
-.drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: min(330px, 88vw);
-  height: 100vh;
-  background: #fff;
-  z-index: 201;
-  transform: translateX(100%);
-  transition: 0.25s ease;
-  padding: 20px;
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
-  overflow-y: auto;
-}
-
-.drawer.open {
-  transform: translateX(0);
-}
-
-.drawer-head {
+.telegram-card {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 12px;
-}
+  gap: 13px;
 
-.drawer-head strong {
-  font-size: 18px;
-}
+  padding: 16px;
 
-.drawer-close {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
   background: #fff;
-  border-radius: 9px;
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: var(--shadow);
 }
 
-.drawer-item {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  padding: 13px 12px;
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 650;
-  margin-bottom: 3px;
-}
+.telegram-icon {
+  width: 42px;
+  height: 42px;
 
-.drawer-item:hover {
-  background: #f3f6fa;
-}
+  flex-shrink: 0;
 
-/* =========================
-   MODAL
-   ========================= */
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px;
-  z-index: 300;
-  opacity: 0;
-  visibility: hidden;
-  transition: 0.2s ease;
+
+  border-radius: 12px;
+
+  background: var(--soft-blue);
+
+  font-size: 20px;
 }
 
-.modal-overlay.open {
-  opacity: 1;
-  visibility: visible;
-}
+.telegram-content {
+  min-width: 0;
+  flex: 1;
 
-.modal {
-  width: min(460px, 100%);
-  max-height: calc(100vh - 36px);
-  overflow-y: auto;
-  background: #fff;
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-}
-
-.modal-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 18px;
+  flex-direction: column;
 }
 
-.modal-head h3 {
-  margin: 0;
-  font-size: 19px;
+.telegram-content strong {
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.modal-close {
-  width: 35px;
-  height: 35px;
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 9px;
+.telegram-content span {
+  margin-top: 3px;
+
+  color: var(--muted);
+
+  font-size: 11px;
+  line-height: 1.4;
 }
 
-/* =========================
-   FORM
-   ========================= */
 
-.form-group {
-  margin-bottom: 14px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  border: 1px solid #d9dee8;
-  border-radius: 10px;
-  padding: 11px 12px;
-  outline: none;
-  background: #fff;
-  color: var(--text);
-}
-
-.form-group input {
-  height: 43px;
-}
-
-.form-group textarea {
-  min-height: 95px;
-  resize: vertical;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.09);
-}
-
-/* =========================
+/* =========================================================
    BUTTONS
-   ========================= */
+========================================================= */
 
 .btn {
-  min-height: 42px;
-  padding: 0 15px;
+  min-height: 40px;
+
+  padding: 0 14px;
+
   border: 0;
   border-radius: 10px;
-  font-size: 13px;
-  font-weight: 750;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
+
+  font-size: 12px;
+  font-weight: 750;
+
   transition: 0.18s ease;
 }
 
@@ -509,48 +629,252 @@ button {
   flex-wrap: wrap;
 }
 
-/* =========================
-   KEY MODAL
-   ========================= */
 
-.key-display {
-  background: #f4f7fb;
-  border: 1px dashed #cbd5e1;
-  border-radius: 11px;
-  padding: 13px;
-  font-family: monospace;
-  font-size: 13px;
-  word-break: break-all;
-  margin: 12px 0;
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.home-footer {
+  width: 100%;
+
+  padding: 28px 20px 25px;
+
+  background: #fff;
+
+  border-top: 1px solid var(--border);
+
+  text-align: center;
 }
 
-/* =========================
-   ACCOUNT
-   ========================= */
+.footer-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.footer-brand img {
+  width: 32px;
+  height: 32px;
+
+  object-fit: contain;
+
+  border-radius: 8px;
+}
+
+.footer-brand strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.home-footer > p {
+  margin: 7px 0 0;
+
+  color: var(--muted);
+
+  font-size: 11px;
+}
+
+.footer-links {
+  margin-top: 10px;
+}
+
+.footer-links a {
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  text-decoration: underline;
+}
+
+.home-footer .copyright {
+  margin-top: 17px;
+
+  color: #9ca3af;
+
+  font-size: 10px;
+}
+
+.home-footer .developer {
+  margin-top: 5px;
+
+  color: #9ca3af;
+
+  font-size: 9px;
+  letter-spacing: 0.2px;
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  padding: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(15, 23, 42, 0.5);
+
+  z-index: 300;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition: 0.2s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  width: min(460px, 100%);
+  max-height: calc(100vh - 36px);
+
+  overflow-y: auto;
+
+  padding: 22px;
+
+  background: #fff;
+
+  border-radius: 18px;
+
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.18);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 18px;
+}
+
+.modal-head h3 {
+  margin: 0;
+
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.modal-close {
+  width: 35px;
+  height: 35px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: #fff;
+
+  font-size: 20px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: #f8fafc;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+
+  border: 1px solid #d9dee8;
+  border-radius: 10px;
+
+  padding: 11px 12px;
+
+  outline: none;
+
+  background: #fff;
+  color: var(--text);
+}
+
+.form-group input {
+  height: 43px;
+}
+
+.form-group textarea {
+  min-height: 95px;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.09);
+}
+
+
+/* =========================================================
+   ACCOUNT INFO
+========================================================= */
 
 .account-info {
+  padding: 14px;
+
+  margin-bottom: 15px;
+
   background: #f8fafc;
+
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 15px;
 }
 
 .account-info strong {
   display: block;
+
   font-size: 14px;
 }
 
 .account-info span {
   display: block;
+
   margin-top: 4px;
+
   color: var(--muted);
+
   font-size: 12px;
 }
 
-/* =========================
-   NOTIFICATION
-   ========================= */
+
+/* =========================================================
+   NOTIFICATIONS
+========================================================= */
 
 .notification-list {
   display: grid;
@@ -558,9 +882,12 @@ button {
 }
 
 .notification-item {
+  padding: 13px;
+
   border: 1px solid var(--border);
   border-radius: 11px;
-  padding: 13px;
+
+  background: #fff;
 }
 
 .notification-item strong {
@@ -569,69 +896,238 @@ button {
 
 .notification-item p {
   margin: 5px 0 0;
+
   color: var(--muted);
+
   font-size: 12px;
   line-height: 1.45;
 }
 
-/* =========================
-   EMPTY / LOADING
-   ========================= */
 
-.empty-state {
-  text-align: center;
-  padding: 35px 15px;
-  color: var(--muted);
-  grid-column: 1 / -1;
+/* =========================================================
+   DRAWER
+   Supports the drawer created by app.js
+========================================================= */
+
+.home-drawer-overlay,
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(15, 23, 42, 0.38);
+
+  z-index: 200;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition: 0.2s ease;
 }
 
-.loading {
-  text-align: center;
-  padding: 35px 15px;
-  color: var(--muted);
+.home-drawer-overlay.open,
+.drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
+.home-drawer,
+.drawer {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: min(320px, 86vw);
+  height: 100vh;
+
+  padding: 20px;
+
+  background: #fff;
+
+  z-index: 201;
+
+  transform: translateX(-100%);
+
+  transition: transform 0.25s ease;
+
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+
+  overflow-y: auto;
+}
+
+.home-drawer.open,
+.drawer.open {
+  transform: translateX(0);
+}
+
+.home-drawer-head,
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding-bottom: 18px;
+
+  margin-bottom: 12px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.home-drawer-head strong,
+.drawer-head strong {
+  font-size: 18px;
+}
+
+.close-drawer,
+.drawer-close {
+  width: 36px;
+  height: 36px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: #fff;
+}
+
+.drawer-item {
+  width: 100%;
+
+  padding: 13px 12px;
+
+  margin-bottom: 3px;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+
+  text-align: left;
+
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.drawer-item:hover {
+  background: #f3f6fa;
+}
+
+
+/* =========================================================
+   STATUS MESSAGE
+========================================================= */
+
+.status {
+  position: fixed;
+
+  left: 50%;
+  bottom: 22px;
+
+  transform: translateX(-50%);
+
+  max-width: calc(100% - 30px);
+
+  padding: 10px 14px;
+
+  background: #172033;
+  color: #fff;
+
+  border-radius: 10px;
+
+  font-size: 12px;
+
+  z-index: 500;
+
+  box-shadow: var(--shadow);
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLET
+========================================================= */
 
 @media (max-width: 950px) {
   .apps-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
   }
 }
 
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+========================================================= */
+
 @media (max-width: 700px) {
-  .top-header {
+
+  .home-header {
     height: 62px;
     padding: 0 13px;
   }
 
-  .brand img {
-    width: 36px;
-    height: 36px;
+  .header-left {
+    gap: 9px;
   }
 
-  .brand-name {
-    font-size: 17px;
+  .menu-btn {
+    width: 37px;
+    height: 37px;
   }
 
-  .main {
+  .brand-logo {
+    width: 35px;
+    height: 35px;
+  }
+
+  .brand-text strong {
+    font-size: 15px;
+  }
+
+  .brand-text span {
+    font-size: 9px;
+  }
+
+  .header-actions {
+    gap: 5px;
+  }
+
+  .icon-btn {
+    width: 37px;
+    height: 37px;
+  }
+
+  .account-btn {
+    min-height: 37px;
+    padding: 0 10px;
+
+    font-size: 11px;
+  }
+
+  .home-main {
     width: calc(100% - 22px);
     padding-top: 18px;
   }
 
-  .hero {
+  .hero-content {
     padding: 21px;
+
     border-radius: 16px;
   }
 
-  .hero h1 {
-    font-size: 23px;
+  .hero-content h1 {
+    font-size: 24px;
+    letter-spacing: -0.4px;
+  }
+
+  .hero-content p {
+    font-size: 12px;
   }
 
   .apps-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
     gap: 11px;
   }
 
@@ -643,25 +1139,51 @@ button {
   .app-logo {
     width: 52px;
     height: 52px;
+    border-radius: 12px;
+  }
+
+  .telegram-card {
+    padding: 13px;
   }
 }
 
+
+/* =========================================================
+   RESPONSIVE — SMALL PHONES
+========================================================= */
+
 @media (max-width: 430px) {
+
+  .brand-text span {
+    display: none;
+  }
+
+  .brand-text strong {
+    font-size: 14px;
+  }
+
   .header-actions {
     gap: 4px;
   }
 
-  .icon-btn {
-    width: 37px;
-    height: 37px;
+  .account-btn {
+    padding: 0 8px;
   }
 
-  .hero h1 {
-    font-size: 21px;
+  .hero-content h1 {
+    font-size: 22px;
   }
 
-  .hero p {
-    font-size: 12px;
+  .hero-content p {
+    font-size: 11px;
+  }
+
+  .section-top h2 {
+    font-size: 18px;
+  }
+
+  .section-top p {
+    font-size: 11px;
   }
 
   .apps-grid {
@@ -675,7 +1197,6 @@ button {
   .app-logo {
     width: 48px;
     height: 48px;
-    border-radius: 11px;
   }
 
   .app-name {
@@ -684,6 +1205,19 @@ button {
 
   .app-description {
     font-size: 11px;
+  }
+
+  .telegram-content strong {
+    font-size: 12px;
+  }
+
+  .telegram-content span {
+    font-size: 10px;
+  }
+
+  .telegram-card .btn {
+    min-height: 36px;
+    padding: 0 11px;
   }
 
   .modal {
