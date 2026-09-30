@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+
+  <title>Prep Master</title>
+  <meta
+    name="description"
+    content="Prep Master learning dashboard"
+  />
+
+  <link rel="stylesheet" href="/css/learning-app.css" />
+</head>
+
+<body>
+  <!-- Top Header -->
+  <header class="learning-header">
+    <div class="header-left">
+      <button
+        id="backBtn"
+        class="icon-btn"
+        type="button"
+        aria-label="Go back"
+      >
+        ←
+      </button>
+
+      <div class="header-brand">
+        <div id="headerLogoWrap" class="header-logo-wrap">
+          <img
+            id="headerLogo"
+            class="header-logo"
+            src="/assets/logo.png"
+            alt="Prep Master"
+          />
+        </div>
+
+        <div class="header-text">
+          <div id="headerName" class="header-name">
+            Prep Master
+          </div>
+
+          <span id="headerBadge" class="header-badge">
+            Learning
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button
+        id="aiBtn"
+        class="header-action"
+        type="button"
+      >
+        AI Doubts
+      </button>
+
+      <button
+        id="communityBtn"
+        class="header-action"
+        type="button"
+      >
+        Community
+      </button>
+    </div>
+  </header>
+
+
+  <!-- Main -->
+  <main class="learning-main">
+
+    <!-- App Intro -->
+    <section class="app-intro">
+      <div class="app-intro-content">
+        <div class="app-icon-wrap">
+          <img
+            id="appLogo"
+            class="app-icon"
+            src="/assets/logo.png"
+            alt="App logo"
+          />
+        </div>
+
+        <div class="app-info">
+          <h1 id="appName">Loading...</h1>
+          <p id="appDescription">
+            Please wait while your app is loading.
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Search -->
+    <section class="batch-section">
+      <div class="section-heading">
+        <div>
+          <h2>Batches</h2>
+          <p>Select a batch to continue learning.</p>
+        </div>
+
+        <button
+          id="refreshBatchesBtn"
+          class="refresh-btn"
+          type="button"
+        >
+          ↻
+        </button>
+      </div>
+
+      <div class="batch-search">
+        <span class="search-icon">⌕</span>
+
+        <input
+          id="batchSearch"
+          type="search"
+          placeholder="Search batches..."
+          autocomplete="off"
+        />
+      </div>
+
+      <div
+        id="batchMessage"
+        class="status-message"
+        hidden
+      ></div>
+
+      <div
+        id="batchesGrid"
+        class="batches-grid"
+      ></div>
+    </section>
+
+  </main>
+
+
+  <!-- Loading Overlay -->
+  <div
+    id="loadingOverlay"
+    class="loading-overlay"
+    hidden
+  >
+    <div class="loading-box">
+      <div class="loader"></div>
+      <p id="loadingText">Loading...</p>
+    </div>
+  </div>
+
+
+  <!-- Batch Modal -->
+  <div
+    id="batchModal"
+    class="modal"
+    hidden
+  >
+    <div
+      class="modal-overlay"
+      id="batchModalOverlay"
+    ></div>
+
+    <div class="modal-box">
+      <button
+        id="closeBatchModal"
+        class="modal-close"
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      <div class="modal-icon">📚</div>
+
+      <h2 id="batchModalTitle">
+        Open Batch
+      </h2>
+
+      <p id="batchModalDescription">
+        You are about to open this batch.
+      </p>
+
+      <button
+        id="confirmBatchBtn"
+        class="primary-btn"
+        type="button"
+      >
+        Open Batch
+      </button>
+    </div>
+  </div>
+
+
+  <!-- AI Doubts -->
+  <section
+    id="aiPanel"
+    class="side-panel"
+    hidden
+  >
+    <div class="panel-header">
+      <div>
+        <h2>AI Doubts</h2>
+        <p>Ask study-related questions.</p>
+      </div>
+
+      <button
+        id="closeAiBtn"
+        class="panel-close"
+        type="button"
+      >
+        ×
+      </button>
+    </div>
+
+    <div
+      id="aiMessages"
+      class="ai-messages"
+    ></div>
+
+    <div class="ai-input-area">
+
+      <div
+        id="aiImagePreview"
+        class="ai-image-preview"
+        hidden
+      ></div>
+
+      <div class="ai-input-row">
+
+        <label
+          for="aiImageInput"
+          class="attach-btn"
+          title="Attach study image"
+        >
+          ＋
+        </label>
+
+        <input
+          id="aiImageInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          hidden
+        />
+
+        <textarea
+          id="aiInput"
+          rows="1"
+          placeholder="Ask your doubt..."
+        ></textarea>
+
+        <button
+          id="sendAiBtn"
+          class="send-btn"
+          type="button"
+        >
+          ➤
+        </button>
+      </div>
+
+      <button
+        id="generateAiImageBtn"
+        class="secondary-btn"
+        type="button"
+      >
+        Generate Study Image
+      </button>
+
+    </div>
+  </section>
+
+
+  <!-- Community -->
+  <section
+    id="communityPanel"
+    class="side-panel"
+    hidden
+  >
+    <div class="panel-header">
+      <div>
+        <h2>Community</h2>
+        <p>Connect with other learners.</p>
+      </div>
+
+      <button
+        id="closeCommunityBtn"
+        class="panel-close"
+        type="button"
+      >
+        ×
+      </button>
+    </div>
+
+    <div
+      id="communityMessages"
+      class="community-messages"
+    ></div>
+
+    <div class="community-input-area">
+
+      <div
+        id="communityImagePreview"
+        class="community-image-preview"
+        hidden
+      ></div>
+
+      <div class="community-input-row">
+
+        <label
+          for="communityImageInput"
+          class="attach-btn"
+          title="Attach image"
+        >
+          ＋
+        </label>
+
+        <input
+          id="communityImageInput"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          hidden
+        />
+
+        <textarea
+          id="communityInput"
+          rows="1"
+          placeholder="Write something..."
+        ></textarea>
+
+        <button
+          id="sendCommunityBtn"
+          class="send-btn"
+          type="button"
+        >
+          ➤
+        </button>
+
+      </div>
+
+      <small>
+        Images only. Videos are not supported.
+      </small>
+
+    </div>
+  </section>
+
+
+  <!-- Error / Toast -->
+  <div
+    id="toast"
+    class="toast"
+    hidden
+  ></div>
+
+
+  <script src="/js/learning-app.js"></script>
+</body>
+</html>
