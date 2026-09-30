@@ -395,18 +395,10 @@
      ========================================= */
 
   function openApp(appId) {
-    if (!appId) return;
+  if (!appId) return;
 
-    if (isUnlocked(appId)) {
-      window.location.href =
-        `/app?appId=${encodeURIComponent(
-          appId
-        )}`;
-
-      return;
-    }
-
-    openKeyModal(appId);
+  window.location.href =
+    `/app?appId=${encodeURIComponent(appId)}`;
   }
 
   /* =========================================
